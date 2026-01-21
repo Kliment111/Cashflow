@@ -13,94 +13,312 @@
             <option value="uk">Українська</option>
             <option value="en">English</option>
         </select>
+        <button class="btn-restore" onclick="restoreHistory()" title="Восстановить историю из памяти">💾 Восстановить</button>
     </div>
 
     <div class="container">
-        <h1 id="appTitle">💰 Финансовый Трекер</h1>
-        
-        <div class="view-toggle">
-            <button id="monthViewBtn" class="view-btn active" data-i18n="monthView">По месяцам</button>
-            <button id="quarterViewBtn" class="view-btn" data-i18n="quarterView">По кварталам</button>
-        </div>
-        
-        <div class="month-selector" id="monthSelector">
-            <button id="prevMonthBtn" class="month-nav-btn">←</button>
-            <input 
-                type="month" 
-                id="monthInput" 
-                class="month-input">
-            <button id="nextMonthBtn" class="month-nav-btn">→</button>
-            <button id="todayBtn" class="month-nav-btn today-btn" data-i18n="today">Сегодня</button>
-        </div>
-
-        <div class="quarter-selector" id="quarterSelector" style="display: none;">
-            <button id="prevQuarterBtn" class="month-nav-btn">←</button>
-            <div class="quarter-display">
-                <select id="quarterInput" class="quarter-input">
-                    <option value="2026-Q1">2026 - I квартал</option>
-                    <option value="2026-Q2">2026 - II квартал</option>
-                    <option value="2026-Q3">2026 - III квартал</option>
-                    <option value="2026-Q4">2026 - IV квартал</option>
-                </select>
-            </div>
-            <button id="nextQuarterBtn" class="month-nav-btn">→</button>
-            <button id="todayQuarterBtn" class="month-nav-btn today-btn" data-i18n="today">Сегодня</button>
-        </div>
-        
-        <div class="summary">
-            <div class="summary-item income">
-                <p class="label" data-i18n="income">Доходы</p>
-                <p class="amount" id="totalIncome">0 ₽</p>
-            </div>
-            <div class="summary-item expense">
-                <p class="label" data-i18n="expense">Расходы</p>
-                <p class="amount" id="totalExpense">0 ₽</p>
-            </div>
-            <div class="summary-item balance">
-                <p class="label" data-i18n="balance">Баланс</p>
-                <p class="amount" id="totalBalance">0 ₽</p>
+        <div class="header">
+            <h1 id="appTitle">💰 Финансовый Трекер</h1>
+            <div class="header-controls">
+                <div class="month-selector">
+                    <button id="prevMonthBtn" class="month-nav-btn">←</button>
+                    <input type="month" id="monthInput" class="month-input">
+                    <button id="nextMonthBtn" class="month-nav-btn">→</button>
+                    <button id="todayBtn" class="month-nav-btn today-btn" data-i18n="today">Сегодня</button>
+                </div>
             </div>
         </div>
 
-        <div class="input-section">
-            <input 
-                type="text" 
-                id="description" 
-                placeholder="Описание (например: Зарплата или Покупка продуктов)" 
-                class="input-field"
-                data-i18n="descPlaceholder"
-                data-placeholder="true">
-            
-            <input 
-                type="number" 
-                id="amount" 
-                placeholder="Сумма" 
-                class="input-field" 
-                step="0.01"
-                data-i18n="amountPlaceholder"
-                data-placeholder="true">
-            
-            <input 
-                type="date" 
-                id="transactionDate" 
-                class="input-field">
-            
-            <div class="button-group">
-                <button id="incomeBtn" class="btn btn-income" data-i18n="addIncome">➕ Доход</button>
-                <button id="expenseBtn" class="btn btn-expense" data-i18n="addExpense">➖ Расход</button>
+        <div class="main-grid">
+            <!-- ЛЕВАЯ КОЛОНКА: Активы, Пассивы, Итоги -->
+            <div class="left-panel">
+                <!-- АКТИВЫ -->
+                <div class="panel-section assets-panel">
+                    <div class="section-header">
+                        <h3 data-i18n="assetsTitle">💳 Активы</h3>
+                        <div class="total-amount" id="totalAssetsAmount">0 $</div>
+                    </div>
+                    <div class="assets-list" id="assetsList"></div>
+                    <button class="btn btn-sm btn-success btn-full" id="addAssetBtn" onclick="openAssetModal()" data-i18n="addAsset">➕ Добавить Актив</button>
+                </div>
+
+                <!-- ПАССИВЫ -->
+                <div class="panel-section liabilities-panel">
+                    <div class="section-header">
+                        <h3 data-i18n="liabilitiesTitle">📊 Пассивы</h3>
+                        <div class="total-amount" id="totalLiabilitiesAmount">0 $</div>
+                    </div>
+                    <div class="liabilities-list" id="liabilitiesList"></div>
+                    <button class="btn btn-sm btn-info btn-full" id="addLiabilityBtn" onclick="openLiabilityModal()" data-i18n="addLiability">➕ Добавить Пассив</button>
+                </div>
+
+                <!-- ИТОГИ -->
+                <div class="panel-section summary-panel">
+                    <h3>📈 Итоги</h3>
+                    <div class="summary-grid">
+                        <div class="summary-item income">
+                            <p class="label" data-i18n="income">Доходы</p>
+                            <p class="amount" id="totalIncome">0 $</p>
+                        </div>
+                        <div class="summary-item expense">
+                            <p class="label" data-i18n="expense">Расходы</p>
+                            <p class="amount" id="totalExpense">0 $</p>
+                        </div>
+                        <div class="summary-item balance">
+                            <p class="label" data-i18n="balance">Баланс</p>
+                            <p class="amount" id="totalBalance">0 $</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-full" id="monthEndBtn" data-i18n="monthEnd">📅 Закончить месяц</button>
+                </div>
+            </div>
+
+            <!-- ЦЕНТРАЛЬНАЯ КОЛОНКА: Доходы -->
+            <div class="center-panel">
+                <div class="panel-section transactions-card income-card" onclick="openIncomeModal()" style="cursor: pointer;">
+                    <div class="card-header">
+                        <h3>💰 Доходы</h3>
+                    </div>
+                    <div id="incomeList" class="transactions-list">
+                        <p class="empty-message">Нет доходов</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ПРАВАЯ КОЛОНКА: Расходы -->
+            <div class="right-panel">
+                <div class="panel-section transactions-card expense-card" onclick="openExpenseModal()" style="cursor: pointer;">
+                    <div class="card-header">
+                        <h3>💸 Расходы</h3>
+                    </div>
+                    <div id="expenseList" class="transactions-list">
+                        <p class="empty-message">Нет расходов</p>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="transactions-section">
-            <h2 data-i18n="history">История транзакций</h2>
-            <div id="transactionsList" class="transactions-list">
-                <p class="empty-message">Нет транзакций. Добавьте доход или расход!</p>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ДЛЯ ДОХОДОВ -->
+    <div id="incomeModal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>💰 Добавить Доход</h2>
+                <button class="modal-close" onclick="closeIncomeModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="incomeType">Тип дохода</label>
+                    <select id="incomeType" class="input-field">
+                        <option value="salary">Зарплата</option>
+                        <option value="bonus">Бонус</option>
+                        <option value="freelance">Фриланс</option>
+                        <option value="investment">Инвестиции</option>
+                        <option value="gift">Подарок</option>
+                        <option value="other">Другое</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="incomeDescription">Описание</label>
+                    <input type="text" id="incomeDescription" class="input-field" placeholder="Например: Зарплата за январь">
+                </div>
+                <div class="form-group">
+                    <label for="incomeAmount">Сумма ($)</label>
+                    <input type="number" id="incomeAmount" class="input-field" placeholder="0.00" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="incomeDate">Дата</label>
+                    <input type="date" id="incomeDate" class="input-field">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeIncomeModal()">Отмена</button>
+                <button class="btn btn-income" onclick="addIncomeTransaction()">Добавить</button>
             </div>
         </div>
+    </div>
 
-        <button id="clearBtn" class="btn btn-clear" data-i18n="clearAll">🗑️ Очистить всё</button>
+    <!-- МОДАЛЬНОЕ ОКНО ДЛЯ РАСХОДОВ -->
+    <div id="expenseModal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>💸 Добавить Расход</h2>
+                <button class="modal-close" onclick="closeExpenseModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="expenseType">Категория расхода</label>
+                    <select id="expenseType" class="input-field">
+                        <option value="food">Продукты</option>
+                        <option value="transport">Транспорт</option>
+                        <option value="utilities">Коммунальные услуги</option>
+                        <option value="entertainment">Развлечения</option>
+                        <option value="health">Здоровье</option>
+                        <option value="shopping">Покупки</option>
+                        <option value="other">Другое</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="expenseDescription">Описание</label>
+                    <input type="text" id="expenseDescription" class="input-field" placeholder="Например: Продукты в магазине">
+                </div>
+                <div class="form-group">
+                    <label for="expenseAmount">Сумма ($)</label>
+                    <input type="number" id="expenseAmount" class="input-field" placeholder="0.00" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="expenseDate">Дата</label>
+                    <input type="date" id="expenseDate" class="input-field">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeExpenseModal()">Отмена</button>
+                <button class="btn btn-expense" onclick="addExpenseTransaction()">Добавить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ДЛЯ АКТИВОВ -->
+    <div id="assetModal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>💳 Добавить/Пополнить Актив</h2>
+                <button class="modal-close" onclick="closeAssetModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="assetName">Название актива</label>
+                    <input type="text" id="assetName" class="input-field" placeholder="Например: Наличность" list="assetSuggestions">
+                    <datalist id="assetSuggestions">
+                        <option value="Наличность"></option>
+                        <option value="Банковский счёт"></option>
+                        <option value="Сбережения"></option>
+                        <option value="Инвестиции"></option>
+                        <option value="Депозит"></option>
+                        <option value="Криптовалюта"></option>
+                        <option value="Недвижимость"></option>
+                        <option value="Автомобиль"></option>
+                    </datalist>
+                </div>
+                <div class="form-group">
+                    <label for="assetAmount">Сумма ($)</label>
+                    <input type="number" id="assetAmount" class="input-field" placeholder="0.00" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="assetRate">Процентная ставка (% годовых) - опционально</label>
+                    <input type="number" id="assetRate" class="input-field" placeholder="0.00" step="0.01" min="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeAssetModal()">Отмена</button>
+                <button class="btn btn-success" onclick="addAssetTransaction()">Добавить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ УДАЛЕНИЯ -->
+    <!-- МОДАЛЬНОЕ ОКНО ДЛЯ ПОГАШЕНИЯ ПАССИВА -->
+    <div id="payLiabilityModal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content pay-liability-modal">
+            <div class="modal-header">
+                <h2 id="payLiabilityTitle">💰 Погасить пассив</h2>
+                <button class="modal-close" onclick="closePayLiabilityModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="liability-info-pay">
+                    <div class="info-row">
+                        <span class="info-label">Название:</span>
+                        <span id="payLiabilityName" class="info-value">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Основная сумма:</span>
+                        <span id="payLiabilityAmount" class="info-value">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Погашено:</span>
+                        <span id="payLiabilityPaid" class="info-value">-</span>
+                    </div>
+                    <div class="info-row highlight">
+                        <span class="info-label">Осталось:</span>
+                        <span id="payLiabilityRemaining" class="info-value">-</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="payLiabilityAmountInput">Сумма погашения ($):</label>
+                    <input type="number" id="payLiabilityAmountInput" class="input-field" placeholder="0.00" step="0.01" min="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closePayLiabilityModal()">Отмена</button>
+                <button class="btn btn-info" id="confirmPayBtn">Погасить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ УДАЛЕНИЯ -->
+    <div id="deleteConfirmModal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content delete-confirm-modal">
+            <div class="modal-header">
+                <h2 id="deleteConfirmTitle">⚠️ Подтверждение удаления</h2>
+                <button class="modal-close" onclick="closeDeleteConfirm()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p id="deleteConfirmMessage">Вы уверены, что хотите удалить этот элемент?</p>
+                <p style="font-size: 12px; color: #7f8c8d; margin-top: 10px;">Это действие нельзя отменить.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeDeleteConfirm()">Отмена</button>
+                <button class="btn btn-danger" id="confirmDeleteBtn">Удалить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ДЛЯ ПАССИВОВ -->
+    <div id="liabilityModal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📊 Добавить Пассив</h2>
+                <button class="modal-close" onclick="closeLiabilityModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="liabilityName">Название обязательства</label>
+                    <input type="text" id="liabilityName" class="input-field" placeholder="Например: Кредит" list="liabilitySuggestions">
+                    <datalist id="liabilitySuggestions">
+                        <option value="Ипотека"></option>
+                        <option value="Кредит на машину"></option>
+                        <option value="Потребительский кредит"></option>
+                        <option value="Кредитная карта"></option>
+                        <option value="Налоги"></option>
+                        <option value="Коммунальные платежи"></option>
+                        <option value="Долг другу"></option>
+                        <option value="Образовательный кредит"></option>
+                    </datalist>
+                </div>
+                <div class="form-group">
+                    <label for="liabilityAmount">Сумма ($)</label>
+                    <input type="number" id="liabilityAmount" class="input-field" placeholder="0.00" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="liabilityRate">Процентная ставка (% годовых)</label>
+                    <input type="number" id="liabilityRate" class="input-field" placeholder="0.00" step="0.01" min="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeLiabilityModal()">Отмена</button>
+                <button class="btn btn-info" onclick="addLiabilityTransaction()">Добавить</button>
+            </div>
+        </div>
     </div>
 
     <script src="main.js"></script>
 </body>
 </html>
+
