@@ -2,13 +2,12 @@
 /* Новый дизайн splash-card */
 .splash-card {
     position: relative;
-    width: 720px;
-    max-width: 99vw;
-    min-height: 600px;
-    background: linear-gradient(135deg, #fff0f0 0%, #ffb3b3 100%);
-    border-radius: 36px;
-    border: 6px solid #e74c3c;
-    box-shadow: 0 32px 80px 0 rgba(231,76,60,0.28), 0 8px 40px rgba(231,76,60,0.18);
+    width: 100vw;
+    max-width: 100vw;
+    min-height: 100vh;
+    background: linear-gradient(120deg, #a18cd1 0%, #fbc2eb 100%);
+    border-radius: 48px;
+    box-shadow: 0 32px 80px 0 rgba(161,140,209,0.18), 0 8px 40px rgba(251,194,235,0.13);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -16,8 +15,8 @@
     overflow: hidden;
     margin: 0 auto;
     animation: popIn 0.7s cubic-bezier(.4,2,.6,1) both;
-    transition: box-shadow 0.2s, border 0.2s;
-    padding: 56px 48px 48px 48px;
+    padding: 80px 0;
+    border: none;
 }
 
 .splash-card-gradient {
@@ -26,81 +25,83 @@
 .splash-card-inner {
     position: relative;
     z-index: 2;
-    width: 100%;
-    height: 100%;
+    width: 80vw;
+    max-width: 1200px;
+    background: rgba(255,255,255,0.85);
+    border-radius: 32px;
+    box-shadow: 0 8px 32px rgba(161,140,209,0.12);
+    padding: 64px 48px 48px 48px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 44px 32px 32px 32px;
 }
 .splash-logo-big {
-    margin-bottom: 18px;
+    margin-bottom: 24px;
 }
 .splash-title {
-    font-size: 3.2rem;
+    font-size: 3.5rem;
     font-weight: 900;
-    color: #e74c3c;
-    margin-bottom: 16px;
+    color: #764ba2;
+    margin-bottom: 18px;
     letter-spacing: 2px;
-    text-shadow: 0 4px 16px #ffd6d6;
+    text-shadow: 0 4px 16px #e0d7f7;
     text-align: center;
 }
 .splash-subtitle {
-    font-size: 1.35rem;
+    font-size: 1.5rem;
     font-weight: 600;
-    color: #667eea;
-    margin-bottom: 36px;
+    color: #a18cd1;
+    margin-bottom: 40px;
     letter-spacing: 1px;
     text-align: center;
 }
 .splash-form {
     display: flex;
-    flex-direction: column;
-    gap: 28px;
-    align-items: center;
+    flex-direction: row;
+    gap: 60px;
+    align-items: flex-start;
+    justify-content: center;
     width: 100%;
+    margin-top: 40px;
 }
 .splash-label {
-    font-size: 1.22rem;
-    font-weight: 700;
-    color: #e74c3c;
-    margin-bottom: 6px;
-    display: flex;
-    align-items: center;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #764ba2;
+    margin-bottom: 16px;
+    display: block;
+    text-align: left;
 }
 .splash-select {
-    padding: 18px 32px;
-    border: 3px solid #e74c3c;
-    border-radius: 14px;
-    font-size: 1.22rem;
-    font-weight: 700;
+    padding: 24px 48px;
+    border: 3px solid #a18cd1;
+    border-radius: 18px;
+    font-size: 1.5rem;
+    font-weight: 800;
     color: #333;
-    background: #fff0f0;
-    margin-bottom: 10px;
+    background: #f8fafd;
+    margin-bottom: 20px;
     transition: border 0.2s, box-shadow 0.2s;
-    box-shadow: 0 2px 8px rgba(231,76,60,0.12);
+    box-shadow: 0 4px 16px rgba(161,140,209,0.18);
+    width: 320px;
 }
 .splash-btn {
-    margin-top: 18px;
-    padding: 20px 60px;
-    font-size: 1.35rem;
-    border-radius: 16px;
-    font-weight: 800;
-    background: linear-gradient(90deg, #e74c3c 0%, #ff7675 100%) !important;
-    color: #fff !important;
+    margin-top: 40px;
+    padding: 32px 120px;
+    font-size: 2rem;
+    border-radius: 24px;
+    font-weight: 900;
+    background: linear-gradient(90deg, #a18cd1 0%, #fbc2eb 100%);
+    color: #fff;
     border: none;
-    box-shadow: 0 8px 32px rgba(231,76,60,0.18);
+    box-shadow: 0 12px 48px rgba(161,140,209,0.18);
     transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
     cursor: pointer;
 }
-.splash-btn:hover, .splash-btn-animate:hover {
-    background: linear-gradient(90deg, #ff7675 0%, #e74c3c 100%) !important;
-    box-shadow: 0 6px 24px rgba(231,76,60,0.18);
+.splash-btn:hover {
+    background: linear-gradient(90deg, #fbc2eb 0%, #a18cd1 100%);
+    box-shadow: 0 16px 64px rgba(161,140,209,0.22);
     transform: translateY(-2px) scale(1.04);
-}
-.splash-btn-animate {
-    animation: btnPopIn 0.7s cubic-bezier(.4,2,.6,1) both;
 }
 /* Splash Screen Styles */
 .splash-screen {
@@ -188,7 +189,7 @@
     transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
     cursor: pointer;
 }
-.splash-btn:hover, .splash-btn-animate:hover {
+.splash-btn:hover {
     background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%) !important;
     box-shadow: 0 6px 24px rgba(39,174,96,0.18);
     transform: translateY(-2px) scale(1.04);
@@ -428,6 +429,16 @@ html {
     top: 20px;
     right: 20px;
     z-index: 1000;
+    background: #f8fafd;
+    border-radius: 24px;
+    box-shadow: 0 4px 16px rgba(161,140,209,0.10);
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-top: 24px;
+    margin-bottom: 24px;
+    justify-content: center;
 }
 
 .language-select {
@@ -1361,12 +1372,12 @@ h2 {
 .btn-success {
     background: linear-gradient(135deg, #27ae60, #229954);
     color: white;
-    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+    box-shadow: 0 4px 12px rgba(39,174,96,0.3);
 }
 
 .btn-success:hover {
     background: linear-gradient(135deg, #229954, #1e8449);
-    box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+    box-shadow: 0 6px 20px rgba(39,174,96,0.4);
     transform: translateY(-2px);
 }
 
@@ -1794,4 +1805,25 @@ h2 {
 
 .btn-info:active {
     transform: translateY(0);
+}
+
+.btn-restore {
+    padding: 12px 32px;
+    font-size: 1.08rem;
+    font-weight: 700;
+    border-radius: 12px;
+    background: linear-gradient(90deg, #a18cd1 0%, #fbc2eb 100%);
+    color: #fff;
+    border: none;
+    box-shadow: 0 2px 8px rgba(161,140,209,0.12);
+    transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    outline: none;
+    display: inline-block;
+}
+.btn-restore:hover {
+    background: linear-gradient(90deg, #fbc2eb 0%, #a18cd1 100%);
+    box-shadow: 0 6px 24px rgba(161,140,209,0.18);
+    transform: translateY(-2px) scale(1.04);
 }
