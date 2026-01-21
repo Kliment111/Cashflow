@@ -1,3 +1,33 @@
+        <!-- Модальное окно завершения месяца -->
+        <div id="monthEndModal" class="modal month-end-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <span class="modal-title">📅 Месяц завершён</span>
+                    <button class="modal-close" onclick="closeMonthEndModal()">✕</button>
+                </div>
+                <div class="modal-body" id="monthEndModalBody">
+                    <!-- Динамический текст результата -->
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-success" onclick="closeMonthEndModal()">ОК</button>
+                </div>
+            </div>
+        </div>
+    <!-- Восстановление истории: красивое модальное окно -->
+    <div id="restoreSuccessModal" class="modal restore-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title">✅ История восстановлена</span>
+                <button class="modal-close" onclick="closeRestoreSuccessModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>Ваша история успешно восстановлена из памяти!</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-success" onclick="closeRestoreSuccessModal()">ОК</button>
+            </div>
+        </div>
+    </div>
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -7,7 +37,28 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="language-selector">
+    <!-- Splash Screen -->
+    <div id="splashScreen" class="splash-screen">
+        <div class="splash-content">
+            <h1 class="splash-title">💰 Cashflow</h1>
+            <div class="splash-form">
+                <label for="splashLanguage" class="splash-label">Выберите язык:</label>
+                <select id="splashLanguage" class="splash-select">
+                    <option value="ru">Русский</option>
+                    <option value="uk">Українська</option>
+                    <option value="en">English</option>
+                </select>
+                <label for="splashCurrency" class="splash-label">Выберите валюту:</label>
+                <select id="splashCurrency" class="splash-select">
+                    <option value="$">Доллар ($)</option>
+                    <option value="₴">Гривна (₴)</option>
+                    <option value="€">Евро (€)</option>
+                </select>
+                <button class="btn btn-success splash-btn" id="splashContinueBtn">Продолжить</button>
+            </div>
+        </div>
+    </div>
+    <div class="language-selector" id="languageSelector" style="display:none;">
         <select id="languageSelect" class="language-select">
             <option value="ru">Русский</option>
             <option value="uk">Українська</option>
@@ -314,6 +365,37 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeLiabilityModal()">Отмена</button>
                 <button class="btn btn-info" onclick="addLiabilityTransaction()">Добавить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО СНЯТИЯ АКТИВА -->
+    <div id="withdrawAssetModal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content withdraw-asset-modal">
+            <div class="modal-header">
+                <h2 id="withdrawAssetTitle" data-i18n="withdrawAssetTitle">💸 Снять с актива</h2>
+                <button class="modal-close" onclick="closeWithdrawAssetModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="asset-info-withdraw">
+                    <div class="info-row">
+                        <span class="info-label" data-i18n="assetNameLabel">Название:</span>
+                        <span id="withdrawAssetName" class="info-value">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label" data-i18n="availableLabel">Доступно:</span>
+                        <span id="withdrawAssetAvailable" class="info-value">-</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="withdrawAssetAmountInput" data-i18n="withdrawAmountLabel">Сумма снятия ($):</label>
+                    <input type="number" id="withdrawAssetAmountInput" class="input-field" placeholder="0.00" step="0.01" min="0" data-i18n="withdrawAmountPlaceholder" data-placeholder="withdrawAmountPlaceholder">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeWithdrawAssetModal()" data-i18n="cancel">Отмена</button>
+                <button class="btn btn-warning" id="confirmWithdrawAssetBtn" data-i18n="withdrawBtn">Снять</button>
             </div>
         </div>
     </div>

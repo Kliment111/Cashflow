@@ -1,4 +1,80 @@
+// --- SPLASH SCREEN LOGIC ---
+document.addEventListener('DOMContentLoaded', function() {
+    const splashScreen = document.getElementById('splashScreen');
+    const splashContinueBtn = document.getElementById('splashContinueBtn');
+    const splashLanguage = document.getElementById('splashLanguage');
+    const splashCurrency = document.getElementById('splashCurrency');
+    const languageSelector = document.getElementById('languageSelector');
+    const container = document.querySelector('.container');
+    if (splashScreen && splashContinueBtn && splashLanguage && splashCurrency) {
+        container.style.display = 'none';
+        languageSelector.style.display = 'none';
+        splashScreen.style.display = 'flex';
+        splashContinueBtn.onclick = function() {
+            // Сохраняем язык и валюту
+            localStorage.setItem('language', splashLanguage.value);
+            localStorage.setItem('currency', splashCurrency.value);
+            // Применяем язык
+            currentLanguage = splashLanguage.value;
+            currentCurrency = splashCurrency.value;
+            updateLanguage();
+            // Показываем основной сайт
+            splashScreen.style.display = 'none';
+            container.style.display = '';
+            languageSelector.style.display = '';
+        };
+    }
+});
+// Восстановить историю из localStorage (например, после очистки или сбоя)
+function restoreHistory() {
+    // Попробуем получить данные из localStorage
+    const storedTransactions = localStorage.getItem('transactions');
+    const storedAssets = localStorage.getItem('assets');
+    const storedLiabilities = localStorage.getItem('liabilities');
+    const storedLastMonthEnd = localStorage.getItem('lastMonthEnd');
+
+    if (storedTransactions) {
+        transactions = JSON.parse(storedTransactions);
+    }
+    if (storedAssets) {
+        assets = JSON.parse(storedAssets);
+    }
+    if (storedLiabilities) {
+        liabilities = JSON.parse(storedLiabilities);
+    }
+    if (storedLastMonthEnd) {
+        lastMonthEnd = JSON.parse(storedLastMonthEnd);
+    }
+
+    // Обновить UI после восстановления
+    updateUI();
+    updateAssetsUI();
+    updateLiabilitiesUI();
+    showRestoreSuccessModal();
+}
+
+// Показать модальное окно успешного восстановления
+function showRestoreSuccessModal() {
+    const modal = document.getElementById('restoreSuccessModal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+// Закрыть модальное окно успешного восстановления
+function closeRestoreSuccessModal() {
+    const modal = document.getElementById('restoreSuccessModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+}
 // Переводы для трех языков
+let deleteConfirmCallback = null;
+let payLiabilityCallback = null;
+let payLiabilityContextId = null;
+let withdrawAssetContextId = null;
 const translations = {
     ru: {
         appTitle: '💰 Финансовый Трекер',
@@ -49,7 +125,14 @@ const translations = {
         monthEndSuccess: 'Месяц закончен! Кешфлоу переведен в активы как наличность.',
         withdrawSuccess: 'Сумма снята из активов и переведена в расходы',
         payLiabilitySuccess: 'Обязательство погашено',
-        interestCharge: 'Начисленный процент'
+        interestCharge: 'Начисленный процент',
+        withdrawAssetTitle: '💸 Снять с актива',
+        assetNameLabel: 'Название:',
+        availableLabel: 'Доступно:',
+        withdrawAmountLabel: 'Сумма снятия ($):',
+        withdrawAmountPlaceholder: '0.00',
+        cancel: 'Отмена',
+        withdrawBtn: 'Снять'
     },
     uk: {
         appTitle: '💰 Фінансовий Трекер',
@@ -62,7 +145,7 @@ const translations = {
         dateLabel: 'Дата',
         amountLabel: 'Сума',
         descPlaceholder: 'Опис (наприклад: Зарплата або Покупка продуктів)',
-        amountPlaceholder: 'Сума',
+        amountPlaceholder: 'Сумма',
         addIncome: '➕ Дохід',
         addExpense: '➖ Видаток',
         history: 'Історія',
@@ -100,7 +183,14 @@ const translations = {
         monthEndSuccess: 'Місяць завершено! Кешфлоу переведено в активи як готівка.',
         withdrawSuccess: 'Суму знято з активів і переведено в видатки',
         payLiabilitySuccess: 'Зобов\'язання погашено',
-        interestCharge: 'Нараховані відсотки'
+        interestCharge: 'Нараховані відсотки',
+        withdrawAssetTitle: '💸 Зняти з активу',
+        assetNameLabel: 'Назва:',
+        availableLabel: 'Доступно:',
+        withdrawAmountLabel: 'Сума зняття ($):',
+        withdrawAmountPlaceholder: '0.00',
+        cancel: 'Скасувати',
+        withdrawBtn: 'Зняти'
     },
     en: {
         appTitle: '💰 Financial Tracker',
@@ -151,12 +241,20 @@ const translations = {
         monthEndSuccess: 'Month ended! Cash flow transferred to assets as cash.',
         withdrawSuccess: 'Amount withdrawn from assets and moved to expenses',
         payLiabilitySuccess: 'Liability paid',
-        interestCharge: 'Interest charged'
+        interestCharge: 'Interest charged',
+        withdrawAssetTitle: '💸 Withdraw from Asset',
+        assetNameLabel: 'Name:',
+        availableLabel: 'Available:',
+        withdrawAmountLabel: 'Withdraw Amount ($):',
+        withdrawAmountPlaceholder: '0.00',
+        cancel: 'Cancel',
+        withdrawBtn: 'Withdraw'
     }
 };
 
 // Текущий язык
 let currentLanguage = localStorage.getItem('language') || 'ru';
+let currentCurrency = localStorage.getItem('currency') || 'USD';
 
 // Функция для получения перевода
 function t(key) {
@@ -172,14 +270,14 @@ const monthInput = document.getElementById('monthInput');
 const prevMonthBtn = document.getElementById('prevMonthBtn');
 const nextMonthBtn = document.getElementById('nextMonthBtn');
 const todayBtn = document.getElementById('todayBtn');
-const monthViewBtn = document.getElementById('monthViewBtn');
-const quarterViewBtn = document.getElementById('quarterViewBtn');
-const monthSelector = document.getElementById('monthSelector');
-const quarterSelector = document.getElementById('quarterSelector');
-const quarterInput = document.getElementById('quarterInput');
-const prevQuarterBtn = document.getElementById('prevQuarterBtn');
-const nextQuarterBtn = document.getElementById('nextQuarterBtn');
-const todayQuarterBtn = document.getElementById('todayQuarterBtn');
+// const monthViewBtn = document.getElementById('monthViewBtn');
+// const quarterViewBtn = document.getElementById('quarterViewBtn');
+// const monthSelector = document.getElementById('monthSelector');
+// const quarterSelector = document.getElementById('quarterSelector');
+// const quarterInput = document.getElementById('quarterInput');
+// const prevQuarterBtn = document.getElementById('prevQuarterBtn');
+// const nextQuarterBtn = document.getElementById('nextQuarterBtn');
+// const todayQuarterBtn = document.getElementById('todayQuarterBtn');
 
 // Элементы для активов
 const addAssetBtn = document.getElementById('addAssetBtn');
@@ -455,9 +553,9 @@ function updateUI() {
     const balance = totalIncome - totalExpense;
 
     // Обновляем суммы
-    totalIncomeEl.textContent = totalIncome.toFixed(2) + ' $';
-    totalExpenseEl.textContent = totalExpense.toFixed(2) + ' $';
-    totalBalanceEl.textContent = balance.toFixed(2) + ' $';
+    totalIncomeEl.textContent = totalIncome.toFixed(2) + ' ' + currentCurrency;
+    totalExpenseEl.textContent = totalExpense.toFixed(2) + ' ' + currentCurrency;
+    totalBalanceEl.textContent = balance.toFixed(2) + ' ' + currentCurrency;
 
     // Обновляем цвет баланса
     if (balance >= 0) {
@@ -479,7 +577,7 @@ function updateUI() {
                     <p class="date">${t.date}</p>
                 </div>
                 <div class="transaction-amount">
-                    <span class="amount ${t.type}">+${t.amount.toFixed(2)} $</span>
+                    <span class="amount ${t.type}">+${t.amount.toFixed(2)} ${currentCurrency}</span>
                     <button class="delete-btn" onclick="event.stopPropagation(); deleteTransaction(${t.id})">✕</button>
                 </div>
             </div>
@@ -499,7 +597,7 @@ function updateUI() {
                     <p class="date">${t.date}</p>
                 </div>
                 <div class="transaction-amount">
-                    <span class="amount ${t.type}">-${t.amount.toFixed(2)} $</span>
+                    <span class="amount ${t.type}">-${t.amount.toFixed(2)} ${currentCurrency}</span>
                     <button class="delete-btn" onclick="event.stopPropagation(); deleteTransaction(${t.id})">✕</button>
                 </div>
             </div>
@@ -525,30 +623,13 @@ function clearAllTransactions() {
 function switchViewMode(newMode) {
     viewMode = newMode;
     
-    if (newMode === 'month') {
-        monthViewBtn.classList.add('active');
-        quarterViewBtn.classList.remove('active');
-        monthSelector.style.display = 'flex';
-        quarterSelector.style.display = 'none';
-        updateMonthInput();
-        updateDateInput();
-    } else {
-        monthViewBtn.classList.remove('active');
-        quarterViewBtn.classList.add('active');
-        monthSelector.style.display = 'none';
-        quarterSelector.style.display = 'flex';
-        // Обновляем квартал на основе текущего месяца
-        selectedQuarter = monthToQuarter(selectedMonth);
-        updateQuarterInput();
-        updateDateInput();
+    // Оставляем только смену режима и обновление UI
+    if (newMode === 'quarter') {
+        // selectedQuarter = monthToQuarter(selectedMonth); // если нужно
     }
-    
     updateUI();
 }
-
-// Обработчики переключения режимов
-monthViewBtn.addEventListener('click', () => switchViewMode('month'));
-quarterViewBtn.addEventListener('click', () => switchViewMode('quarter'));
+// (Кнопки для смены режима отсутствуют в HTML)
 
 // Обработчики событий для навигации по месяцам
 prevMonthBtn.addEventListener('click', () => {
@@ -558,60 +639,9 @@ prevMonthBtn.addEventListener('click', () => {
     updateUI();
 });
 
-nextMonthBtn.addEventListener('click', () => {
-    selectedMonth = getNextMonth(selectedMonth);
-    updateMonthInput();
-    updateDateInput();
-    updateUI();
-});
+// Нет элементов кварталов в HTML, обработчики не нужны
 
-todayBtn.addEventListener('click', () => {
-    selectedMonth = getCurrentMonth();
-    updateMonthInput();
-    updateDateInput();
-    updateUI();
-});
-
-monthInput.addEventListener('change', (e) => {
-    if (e.target.value) {
-        selectedMonth = e.target.value;
-        updateDateInput();
-        updateUI();
-    }
-});
-
-// Обработчики событий для навигации по кварталам
-prevQuarterBtn.addEventListener('click', () => {
-    selectedQuarter = getPreviousQuarter(selectedQuarter);
-    updateQuarterInput();
-    updateDateInput();
-    updateUI();
-});
-
-nextQuarterBtn.addEventListener('click', () => {
-    selectedQuarter = getNextQuarter(selectedQuarter);
-    updateQuarterInput();
-    updateDateInput();
-    updateUI();
-});
-
-todayQuarterBtn.addEventListener('click', () => {
-    selectedQuarter = getCurrentQuarter();
-    updateQuarterInput();
-    updateDateInput();
-    updateUI();
-});
-
-quarterInput.addEventListener('change', (e) => {
-    if (e.target.value) {
-        selectedQuarter = e.target.value;
-        // Обновляем selectedMonth на первый месяц квартала для синхронизации
-        const months = getMonthsInQuarter(selectedQuarter);
-        selectedMonth = months[0];
-        updateDateInput();
-        updateUI();
-    }
-});
+// todayQuarterBtn и quarterInput отсутствуют в HTML, обработчики не нужны
 
 // Обработчик смены языка
 languageSelect.addEventListener('change', (e) => {
@@ -627,13 +657,14 @@ function updateLanguage() {
         const key = el.getAttribute('data-i18n');
         if (el.hasAttribute('data-placeholder')) {
             el.placeholder = t(key);
+        } else if (el.tagName === 'INPUT' && el.type === 'text') {
+            el.placeholder = t(key);
         } else {
             el.textContent = t(key);
         }
     });
 
-    // Обновляем опции квартала
-    updateQuarterOptions();
+    // Нет элементов квартала, не обновляем опции
 
     // Обновляем UI
     updateUI();
@@ -641,21 +672,7 @@ function updateLanguage() {
 
 // Функция для обновления опций квартала
 function updateQuarterOptions() {
-    const year = new Date().getFullYear();
-    const options = [
-        `${year}-Q1|${year} - ${t('Q1')}`,
-        `${year}-Q2|${year} - ${t('Q2')}`,
-        `${year}-Q3|${year} - ${t('Q3')}`,
-        `${year}-Q4|${year} - ${t('Q4')}`
-    ];
-
-    quarterInput.innerHTML = options.map(opt => {
-        const [value, label] = opt.split('|');
-        return `<option value="${value}">${label}</option>`;
-    }).join('');
-
-    // Восстанавливаем выбранное значение
-    quarterInput.value = selectedQuarter;
+    // Нет элементов quarterInput, функция не используется
 }
 
 // ===========================
@@ -703,16 +720,13 @@ function withdrawFromAsset(assetId, amount) {
 // Удалить актив
 // Переменные для модала удаления
 // Переменная для хранения ID пассива при погашении
-let payLiabilityContextId = null;
 
 // Показать модал погашения пассива
 function showPayLiabilityModal(liabilityId) {
     const liability = liabilities.find(l => l.id === liabilityId);
     if (!liability) return;
-    
     payLiabilityContextId = liabilityId;
     const remaining = liability.amount - liability.paidAmount;
-    
     payLiabilityName.textContent = liability.name;
     payLiabilityAmount.textContent = `${liability.amount.toFixed(2)} $`;
     payLiabilityPaid.textContent = `${liability.paidAmount.toFixed(2)} $`;
@@ -720,10 +734,16 @@ function showPayLiabilityModal(liabilityId) {
     payLiabilityAmountInput.value = '';
     payLiabilityAmountInput.max = remaining;
     payLiabilityAmountInput.placeholder = `Макс: ${remaining.toFixed(2)} $`;
-    
+    payLiabilityCallback = null; // сбрасываем callback по умолчанию
     payLiabilityModal.classList.add('active');
     document.body.style.overflow = 'hidden';
     payLiabilityAmountInput.focus();
+}
+
+// Версия с callback (если нужен кастомный обработчик)
+function showPayLiabilityModalWithCallback(liabilityId, callback) {
+    showPayLiabilityModal(liabilityId);
+    payLiabilityCallback = callback;
 }
 
 // Закрыть модал погашения
@@ -786,57 +806,25 @@ function confirmPayLiability() {
     closePayLiabilityModal();
 }
 
-let deleteConfirmCallback = null;
 
 // Показать модал подтверждения удаления
 function showDeleteConfirm(message, callback) {
-    alert('showDeleteConfirm вызвана!'); // ВРЕМЕННО - для проверки
     const modal = document.getElementById('deleteConfirmModal');
     const messageEl = document.getElementById('deleteConfirmMessage');
     const confirmBtn = document.getElementById('confirmDeleteBtn');
-    
-    alert('modal=' + (modal ? 'найден' : 'не найден') + ', messageEl=' + (messageEl ? 'найден' : 'не найден') + ', confirmBtn=' + (confirmBtn ? 'найден' : 'не найден')); // ВРЕМЕННО
-    
-    if (!modal || !messageEl || !confirmBtn) {
-        alert('ОШИБКА: Элементы модали не найдены!');
-        return;
-    }
-    
-    try {
-        messageEl.innerHTML = message;
-        alert('innerHTML установлен!'); // ВРЕМЕННО
-    } catch(e) {
-        alert('ОШИБКА при установке innerHTML: ' + e.message);
-    }
-    
-    try {
-        deleteConfirmCallback = callback;
-        alert('callback установлен!'); // ВРЕМЕННО
-    } catch(e) {
-        alert('ОШИБКА при установке callback: ' + e.message);
-    }
-    
-    // Обновляем обработчик кнопки подтверждения
-    try {
-        confirmBtn.onclick = () => {
-            if (deleteConfirmCallback) {
-                deleteConfirmCallback();
-            }
-        };
-        alert('onclick установлен!'); // ВРЕМЕННО
-    } catch(e) {
-        alert('ОШИБКА при установке onclick: ' + e.message);
-    }
-    
-    try {
-        modal.classList.add('active');
-        alert('Класс active добавлен!'); // ВРЕМЕННО
-    } catch(e) {
-        alert('ОШИБКА при добавлении класса: ' + e.message);
-    }
-    
+    if (!modal) { console.error('deleteConfirmModal не найден!'); return; }
+    if (!messageEl) { console.error('deleteConfirmMessage не найден!'); return; }
+    if (!confirmBtn) { console.error('confirmDeleteBtn не найден!'); return; }
+    console.log('showDeleteConfirm: все элементы найдены, message:', message);
+    messageEl.innerHTML = message;
+    deleteConfirmCallback = callback;
+    confirmBtn.onclick = () => {
+        if (deleteConfirmCallback) {
+            deleteConfirmCallback();
+        }
+    };
+    modal.classList.add('active');
     document.body.style.overflow = 'hidden';
-    alert('Модаль отображена!'); // ВРЕМЕННО
 }
 
 // Закрыть модал подтверждения
@@ -848,15 +836,16 @@ function closeDeleteConfirm() {
 }
 
 function deleteAsset(assetId) {
+    console.log('deleteAsset вызвана для id:', assetId);
     const asset = assets.find(a => a.id === assetId);
     if (!asset) {
         alert('Актив не найден!');
         return;
     }
-    
     showDeleteConfirm(
         `Удалить актив: <strong>${asset.name}</strong>?`,
         () => {
+            console.log('Подтверждено удаление актива:', assetId);
             assets = assets.filter(a => a.id !== assetId);
             saveAssets();
             updateAssetsUI();
@@ -864,6 +853,64 @@ function deleteAsset(assetId) {
         }
     );
 }
+
+// --- МОДАЛЬНОЕ ОКНО СНЯТИЯ АКТИВА ---
+
+function showWithdrawAssetModal(assetId) {
+    const asset = assets.find(a => a.id === assetId);
+    if (!asset) return;
+    withdrawAssetContextId = assetId;
+    const modal = document.getElementById('withdrawAssetModal');
+    document.getElementById('withdrawAssetName').textContent = asset.name;
+    document.getElementById('withdrawAssetAvailable').textContent = asset.amount.toFixed(2) + ' ' + currentCurrency;
+    const input = document.getElementById('withdrawAssetAmountInput');
+    input.value = '';
+    input.max = asset.amount;
+    input.placeholder = `Макс: ${asset.amount.toFixed(2)} ${currentCurrency}`;
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    input.focus();
+
+    // Always re-bind the confirm button when showing the modal
+    const confirmWithdrawAssetBtn = document.getElementById('confirmWithdrawAssetBtn');
+    if (confirmWithdrawAssetBtn) {
+        confirmWithdrawAssetBtn.onclick = confirmWithdrawAsset;
+    }
+    // Always re-bind Enter key for input
+    if (input) {
+        input.onkeypress = (e) => {
+            if (e.key === 'Enter') confirmWithdrawAsset();
+        };
+    }
+}
+
+function closeWithdrawAssetModal() {
+    const modal = document.getElementById('withdrawAssetModal');
+    modal.classList.remove('active');
+    document.body.style.overflow = 'auto';
+    withdrawAssetContextId = null;
+    document.getElementById('withdrawAssetAmountInput').value = '';
+}
+
+function confirmWithdrawAsset() {
+    if (!withdrawAssetContextId) return;
+    const asset = assets.find(a => a.id === withdrawAssetContextId);
+    if (!asset) return;
+    const input = document.getElementById('withdrawAssetAmountInput');
+    const amount = parseFloat(input.value);
+    if (isNaN(amount) || amount <= 0) {
+        alert('Введите корректную сумму!');
+        return;
+    }
+    if (amount > asset.amount) {
+        alert(`Сумма не может быть больше остатка (${asset.amount.toFixed(2)} $)!`);
+        return;
+    }
+    withdrawFromAsset(asset.id, amount);
+    closeWithdrawAssetModal();
+}
+
+
 
 // Сохранить активы
 function saveAssets() {
@@ -873,7 +920,7 @@ function saveAssets() {
 // Обновить UI активов
 function updateAssetsUI() {
     const totalAssets = assets.reduce((sum, a) => sum + a.amount, 0);
-    totalAssetsAmount.textContent = totalAssets.toFixed(2) + ' $';
+    totalAssetsAmount.textContent = totalAssets.toFixed(2) + ' ' + currentCurrency;
 
     if (assets.length === 0) {
         assetsList.innerHTML = `<p class="empty-message">${t('noAssets')}</p>`;
@@ -884,11 +931,11 @@ function updateAssetsUI() {
         <div class="asset-item">
             <div class="asset-info">
                 <p class="asset-name">${asset.name}</p>
-                <p class="asset-amount">${asset.amount.toFixed(2)} $</p>
+                <p class="asset-amount">${asset.amount.toFixed(2)} ${currentCurrency}</p>
                 ${asset.annualRate > 0 ? `<p class="asset-rate">${asset.annualRate.toFixed(2)}% годовых</p>` : ''}
             </div>
             <div class="asset-actions">
-                <button class="asset-btn" onclick="showWithdrawDialog(${asset.id}, ${asset.amount})">
+                <button class="asset-btn" onclick="showWithdrawAssetModal(${asset.id})">
                     🔽 Снять
                 </button>
                 <button class="asset-btn delete" onclick="deleteAsset(${asset.id})">
@@ -926,12 +973,13 @@ function payLiability(liabilityId) {
 
 // Удалить пассив
 function deleteLiability(liabilityId) {
+    console.log('deleteLiability вызвана для id:', liabilityId);
     const liability = liabilities.find(l => l.id === liabilityId);
     if (!liability) return;
-    
     showDeleteConfirm(
         `Удалить пассив: <strong>${liability.name}</strong>?`,
         () => {
+            console.log('Подтверждено удаление пассива:', liabilityId);
             liabilities = liabilities.filter(l => l.id !== liabilityId);
             saveLiabilities();
             updateLiabilitiesUI();
@@ -948,7 +996,7 @@ function saveLiabilities() {
 // Обновить UI пассивов
 function updateLiabilitiesUI() {
     const totalLiabilities = liabilities.reduce((sum, l) => sum + (l.amount - l.paidAmount), 0);
-    totalLiabilitiesAmount.textContent = totalLiabilities.toFixed(2) + ' $';
+    totalLiabilitiesAmount.textContent = totalLiabilities.toFixed(2) + ' ' + currentCurrency;
 
     if (liabilities.length === 0) {
         liabilitiesList.innerHTML = `<p class="empty-message">${t('noLiabilities')}</p>`;
@@ -964,13 +1012,13 @@ function updateLiabilitiesUI() {
                 <div class="liability-info">
                     <p class="liability-name">${liability.name}</p>
                     <p class="liability-rate">
-                        Основная сумма: ${liability.amount.toFixed(2)} $ | 
-                        Погашено: ${liability.paidAmount.toFixed(2)} $ 
+                        Основная сумма: ${liability.amount.toFixed(2)} ${currentCurrency} | 
+                        Погашено: ${liability.paidAmount.toFixed(2)} ${currentCurrency} 
                         ${liability.annualRate > 0 ? `| ${liability.annualRate.toFixed(2)}% годовых` : ''}
                     </p>
                 </div>
                 <div class="liability-actions">
-                    <p class="liability-amount">${remaining.toFixed(2)} $</p>
+                    <p class="liability-amount">${remaining.toFixed(2)} ${currentCurrency}</p>
                     <button class="liability-btn pay" onclick="payLiability(${liability.id})">
                         💰 Погасить
                     </button>
@@ -1007,9 +1055,9 @@ function endMonth() {
     const cashFlow = totalIncome - totalExpense;
 
     // Если кешфлоу положительный, добавляем в активы как наличность
+    let resultText = '';
     if (cashFlow > 0) {
         const cashAsset = assets.find(a => a.name === 'Наличность');
-        
         if (cashAsset) {
             cashAsset.amount += cashFlow;
         } else {
@@ -1021,13 +1069,32 @@ function endMonth() {
             };
             assets.push(newAsset);
         }
-        
-        alert(`${t('monthEndSuccess')} Кешфлоу: +${cashFlow.toFixed(2)} $`);
+        resultText = `<div style="color:#27ae60;font-size:18px;font-weight:600;margin-bottom:8px;">${t('monthEndSuccess')}</div><div>Кешфлоу: <b>+${cashFlow.toFixed(2)} $</b></div>`;
     } else if (cashFlow < 0) {
-        alert(`Месяц закончен с убытком: ${Math.abs(cashFlow).toFixed(2)} $`);
+        resultText = `<div style="color:#e74c3c;font-size:18px;font-weight:600;margin-bottom:8px;">Месяц закончен с убытком</div><div>Кешфлоу: <b>-${Math.abs(cashFlow).toFixed(2)} $</b></div>`;
     } else {
-        alert(`Месяц закончен. Кешфлоу: 0 $`);
+        resultText = `<div style="color:#888;font-size:18px;font-weight:600;margin-bottom:8px;">Месяц закончен</div><div>Кешфлоу: <b>0 $</b></div>`;
     }
+    showMonthEndModal(resultText);
+// Показать модальное окно завершения месяца
+function showMonthEndModal(html) {
+    const modal = document.getElementById('monthEndModal');
+    const body = document.getElementById('monthEndModalBody');
+    if (modal && body) {
+        body.innerHTML = html;
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+// Закрыть модальное окно завершения месяца
+function closeMonthEndModal() {
+    const modal = document.getElementById('monthEndModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+}
 
     // Добавляем проценты на пассивы
     liabilities.forEach(liability => {
@@ -1129,22 +1196,28 @@ updateDateInput();
 updateLanguage();
 updateCurrentDateDisplay();
 
-// Обработчик для закрытия месяца
-monthEndBtn.addEventListener('click', endMonth);
 
-// Обработчики для переключения вкладок
-document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        switchTab(e.target.getAttribute('data-tab'));
+// Назначаем обработчики только после полной загрузки DOM
+document.addEventListener('DOMContentLoaded', function() {
+    const monthEndBtn = document.getElementById('monthEndBtn');
+    if (monthEndBtn) {
+        monthEndBtn.addEventListener('click', endMonth);
+    }
+
+    // Обработчики для переключения вкладок
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            switchTab(e.target.getAttribute('data-tab'));
+        });
     });
+
+    // Инициализируем UI активов и пассивов
+    updateAssetsUI();
+    updateLiabilitiesUI();
+
+    // Инициализируем UI транзакций
+    updateUI();
 });
-
-// Инициализируем UI активов и пассивов
-updateAssetsUI();
-updateLiabilitiesUI();
-
-// Инициализируем UI транзакций
-updateUI();
 
 // ===========================
 // ФУНКЦИИ ДЛЯ МОДАЛЬНЫХ ОКОН
@@ -1408,6 +1481,7 @@ document.addEventListener('keydown', (e) => {
         closeLiabilityModal();
         closeDeleteConfirm();
         closePayLiabilityModal();
+        closeWithdrawAssetModal();
     }
 });
 
@@ -1428,8 +1502,16 @@ confirmDeleteBtn?.addEventListener('click', () => {
     }
 });
 
-// Обработчик для кнопки подтверждения погашения
-confirmPayBtn?.addEventListener('click', confirmPayLiability);
+// Универсальный обработчик для кнопки подтверждения погашения
+if (confirmPayBtn) {
+    confirmPayBtn.onclick = () => {
+        if (typeof payLiabilityCallback === 'function') {
+            payLiabilityCallback();
+        } else {
+            confirmPayLiability();
+        }
+    };
+}
 
 // Обработчик для Enter в поле ввода суммы погашения
 payLiabilityAmountInput?.addEventListener('keypress', (e) => {
