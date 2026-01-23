@@ -3,6 +3,7 @@ let currentSwipePanel = 0; // 0 = transactions, 1 = assets/liabilities
 let touchStartX = 0;
 let touchEndX = 0;
 let isSwiping = false;
+let swipeStartPanel = 0;
 
 function switchToTransactions() {
     currentSwipePanel = 0;
@@ -34,24 +35,51 @@ function updateSwipeTabs() {
     });
 }
 
-// Touch events for swipe
+// Touch events for swipe - CONTROLLED SWIPE
 function handleTouchStart(e) {
     touchStartX = e.touches[0].clientX;
+    swipeStartPanel = currentSwipePanel;
     isSwiping = true;
+    
+    // Disable transition during drag
+    const swipeContent = document.getElementById('swipeContent');
+    if (swipeContent) {
+        swipeContent.style.transition = 'none';
+    }
 }
 
 function handleTouchMove(e) {
     if (!isSwiping) return;
-    touchEndX = e.touches[0].clientX;
+    
+    const swipeContent = document.getElementById('swipeContent');
+    if (!swipeContent) return;
+    
+    const currentX = e.touches[0].clientX;
+    touchEndX = currentX; // Обновляем позицию конца для handleTouchEnd
+    const diff = touchStartX - currentX;
+    
+    // Calculate the percentage of drag
+    const dragPercent = (diff / swipeContent.offsetWidth) * 100;
+    
+    // Translate based on current panel + drag
+    const translateX = (swipeStartPanel * 100) + dragPercent;
+    swipeContent.style.transform = `translateX(-${translateX}%)`;
 }
 
-function handleTouchEnd() {
+function handleTouchEnd(e) {
     if (!isSwiping) return;
     isSwiping = false;
     
-    const swipeThreshold = 50;
-    const diff = touchStartX - touchEndX;
+    const swipeContent = document.getElementById('swipeContent');
+    if (!swipeContent) return;
     
+    // Re-enable transition
+    swipeContent.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    
+    const diff = touchStartX - touchEndX;
+    const swipeThreshold = swipeContent.offsetWidth * 0.2; // 20% threshold
+    
+    // Determine which panel to snap to
     if (Math.abs(diff) > swipeThreshold) {
         if (diff > 0 && currentSwipePanel === 0) {
             // Swipe right - switch to assets/liabilities
@@ -59,7 +87,13 @@ function handleTouchEnd() {
         } else if (diff < 0 && currentSwipePanel === 1) {
             // Swipe left - switch to transactions
             switchToTransactions();
+        } else {
+            // Return to current panel
+            updateSwipePanel();
         }
+    } else {
+        // Didn't swipe far enough - return to current panel
+        updateSwipePanel();
     }
 }
 

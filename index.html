@@ -46,7 +46,7 @@
                             <option value="en">English</option>
                         </select>
                     </div>
-                    <button class="btn-restore-header" onclick="restoreHistory()" title="Восстановить историю из памяти">💾</button>
+                    <button class="btn-restore-header" onclick="restoreHistory()" title="Восстановить историю из памяти">HISTORY</button>
                 </div>
             </div>
             <div class="header-controls">
@@ -60,6 +60,26 @@
         </div>
 
         <div class="main-grid">
+            <!-- ИТОГИ -->
+            <div class="panel-section summary-panel">
+                <h3>📈 Итоги</h3>
+                <div class="summary-grid">
+                    <div class="summary-item income">
+                        <p class="label" data-i18n="income">Доходы</p>
+                        <p class="amount" id="totalIncome">0 $</p>
+                    </div>
+                    <div class="summary-item expense">
+                        <p class="label" data-i18n="expense">Расходы</p>
+                        <p class="amount" id="totalExpense">0 $</p>
+                    </div>
+                    <div class="summary-item balance">
+                        <p class="label" data-i18n="balance">Баланс</p>
+                        <p class="amount" id="totalBalance">0 $</p>
+                    </div>
+                </div>
+                <button class="btn btn-primary" id="monthEndBtn" data-i18n="monthEnd">📅 Закончить месяц</button>
+            </div>
+
             <!-- СВАЙП НАВИГАЦИЯ: Доходы/Расходы и Активы/Пассивы -->
             <div class="swipe-container">
                 <div class="swipe-tabs">
@@ -114,26 +134,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- ИТОГИ -->
-            <div class="panel-section summary-panel">
-                <h3>📈 Итоги</h3>
-                <div class="summary-grid">
-                    <div class="summary-item income">
-                        <p class="label" data-i18n="income">Доходы</p>
-                        <p class="amount" id="totalIncome">0 $</p>
-                    </div>
-                    <div class="summary-item expense">
-                        <p class="label" data-i18n="expense">Расходы</p>
-                        <p class="amount" id="totalExpense">0 $</p>
-                    </div>
-                    <div class="summary-item balance">
-                        <p class="label" data-i18n="balance">Баланс</p>
-                        <p class="amount" id="totalBalance">0 $</p>
-                    </div>
-                </div>
-                <button class="btn btn-primary" id="monthEndBtn" data-i18n="monthEnd">📅 Закончить месяц</button>
             </div>
         </div>
     </div>
