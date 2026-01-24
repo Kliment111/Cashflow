@@ -38,23 +38,12 @@
                 <div class="header-left">
                     <h1 id="appTitle">💰 Финансовый Трекер</h1>
                 </div>
-                <div class="header-right">
-                    <div class="language-toggle">
-                        <select id="headerLanguageSelect" class="header-language-select">
-                            <option value="ru">Русский</option>
-                            <option value="uk">Українська</option>
-                            <option value="en">English</option>
-                        </select>
-                    </div>
-                    <button class="btn-restore-header" onclick="restoreHistory()" title="Восстановить историю из памяти">HISTORY</button>
-                </div>
             </div>
             <div class="header-controls">
                 <div class="month-selector">
                     <button id="prevMonthBtn" class="month-nav-btn">←</button>
                     <input type="month" id="monthInput" class="month-input">
                     <button id="nextMonthBtn" class="month-nav-btn">→</button>
-                    <button id="todayBtn" class="month-nav-btn today-btn" data-i18n="today">Сегодня</button>
                 </div>
             </div>
         </div>
@@ -183,12 +172,12 @@
                 <div class="form-group">
                     <label for="incomeType">Тип дохода</label>
                     <select id="incomeType" class="input-field">
+                        <option value="other" selected>Другое</option>
                         <option value="salary">Зарплата</option>
                         <option value="bonus">Бонус</option>
                         <option value="freelance">Фриланс</option>
                         <option value="investment">Инвестиции</option>
                         <option value="gift">Подарок</option>
-                        <option value="other">Другое</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -223,13 +212,13 @@
                 <div class="form-group">
                     <label for="expenseType">Категория расхода</label>
                     <select id="expenseType" class="input-field">
+                        <option value="other" selected>Другое</option>
                         <option value="food">Продукты</option>
                         <option value="transport">Транспорт</option>
                         <option value="utilities">Коммунальные услуги</option>
                         <option value="entertainment">Развлечения</option>
                         <option value="health">Здоровье</option>
                         <option value="shopping">Покупки</option>
-                        <option value="other">Другое</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -263,7 +252,10 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label for="assetName">Название актива</label>
-                    <input type="text" id="assetName" class="input-field" placeholder="Например: Наличность" list="assetSuggestions">
+                    <div class="input-field-wrapper">
+                        <input type="text" id="assetName" class="input-field" placeholder="Например: Наличность" list="assetSuggestions" autocomplete="off">
+                        <div id="assetSuggestionsDropdown" class="input-field-suggestions"></div>
+                    </div>
                     <datalist id="assetSuggestions">
                         <option value="Наличность"></option>
                         <option value="Банковский счёт"></option>
@@ -302,7 +294,10 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label for="liabilityName">Название обязательства</label>
-                    <input type="text" id="liabilityName" class="input-field" placeholder="Например: Кредит" list="liabilitySuggestions">
+                    <div class="input-field-wrapper">
+                        <input type="text" id="liabilityName" class="input-field" placeholder="Например: Кредит" list="liabilitySuggestions" autocomplete="off">
+                        <div id="liabilitySuggestionsDropdown" class="input-field-suggestions"></div>
+                    </div>
                     <datalist id="liabilitySuggestions">
                         <option value="Ипотека"></option>
                         <option value="Кредит на машину"></option>
@@ -339,8 +334,9 @@
                 <button class="modal-close" onclick="closeDeleteConfirm()">✕</button>
             </div>
             <div class="modal-body">
+                <div class="delete-icon">🗑️</div>
                 <p id="deleteConfirmMessage">Вы уверены, что хотите удалить этот элемент?</p>
-                <p style="font-size: 12px; color: #7f8c8d; margin-top: 10px;">Это действие нельзя отменить.</p>
+                <p class="delete-warning">Это действие нельзя отменить.</p>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeDeleteConfirm()">Отмена</button>
