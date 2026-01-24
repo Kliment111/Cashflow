@@ -121,6 +121,9 @@ function initializeApp() {
     updateAll();
     initializeCustomSuggestions();
     
+    // Setup auto-save
+    setupAutoSave();
+    
     // Start auto-backup system
     startAutoBackup();
     
@@ -1414,14 +1417,26 @@ function importData(file) {
 }
 
 function saveData() {
-    localStorage.setItem('transactions', JSON.stringify(transactions));
-    localStorage.setItem('assets', JSON.stringify(assets));
-    localStorage.setItem('liabilities', JSON.stringify(liabilities));
-    localStorage.setItem('assetUsageCount', JSON.stringify(assetUsageCount));
-    localStorage.setItem('liabilityUsageCount', JSON.stringify(liabilityUsageCount));
-    
-    // Автоматическое резервное копирование
-    autoBackup();
+    try {
+        // Save to localStorage
+        localStorage.setItem('transactions', JSON.stringify(transactions));
+        localStorage.setItem('assets', JSON.stringify(assets));
+        localStorage.setItem('liabilities', JSON.stringify(liabilities));
+        localStorage.setItem('assetUsageCount', JSON.stringify(assetUsageCount));
+        localStorage.setItem('liabilityUsageCount', JSON.stringify(liabilityUsageCount));
+        localStorage.setItem('lastSaveTime', new Date().toISOString());
+        
+        // Automatic backup
+        autoBackup();
+        
+        // Show save indicator (subtle)
+        showSaveIndicator();
+        
+        console.log('Данные успешно сохранены локально');
+    } catch (error) {
+        console.error('Ошибка сохранения данных:', error);
+        showDataMessage('Ошибка сохранения данных', 'error');
+    }
 }
 
 function loadData() {
@@ -1961,5 +1976,341 @@ function updateModalContent() {
     if (deleteNote && t.deleteNote) deleteNote.textContent = t.deleteNote;
     if (deleteBtn && t.delete) deleteBtn.textContent = t.delete;
     if (cancelBtn && t.cancel) cancelBtn.textContent = t.cancel;
+}
+
+// Settings modal functions
+function openSettingsModal() {
+    const modal = document.getElementById('settingsModal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        // Load current settings
+        loadSettingsValues();
+        // Update data section info
+        updateDataSection();
+    }
+}
+
+function closeSettingsModal() {
+    const modal = document.getElementById('settingsModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+// Settings button event listener
+document.addEventListener('DOMContentLoaded', () => {
+    const settingsBtn = document.getElementById('settingsBtn');
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', openSettingsModal);
+    }
+    
+    // Close modal on backdrop click
+    const settingsModal = document.getElementById('settingsModal');
+    if (settingsModal) {
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target === settingsModal || e.target.classList.contains('modal-backdrop')) {
+                closeSettingsModal();
+            }
+        });
+    }
+});
+
+// Load current settings into modal
+function loadSettingsValues() {
+    const settingsLanguage = document.getElementById('settingsLanguage');
+    const settingsCurrency = document.getElementById('settingsCurrency');
+    
+    if (settingsLanguage) {
+        settingsLanguage.value = currentLanguage;
+    }
+    if (settingsCurrency) {
+        settingsCurrency.value = currentCurrency;
+    }
+}
+
+// Apply language and currency settings
+function applyLanguageSettings() {
+    const settingsLanguage = document.getElementById('settingsLanguage');
+    const settingsCurrency = document.getElementById('settingsCurrency');
+    
+    if (settingsLanguage && settingsCurrency) {
+        const newLanguage = settingsLanguage.value;
+        const newCurrency = settingsCurrency.value;
+        
+        // Update global variables
+        currentLanguage = newLanguage;
+        currentCurrency = newCurrency;
+        
+        // Save to localStorage
+        localStorage.setItem('language', currentLanguage);
+        localStorage.setItem('currency', currentCurrency);
+        
+        // Update UI
+        updateLanguage();
+        updateCurrencySymbols();
+        updateModalContent();
+        
+        // Show success message
+        showSettingsSuccess();
+        
+        // Close modal after a short delay
+        setTimeout(() => {
+            closeSettingsModal();
+        }, 1500);
+    }
+}
+
+// Show success message for settings
+function showSettingsSuccess() {
+    const settingsSection = document.querySelector('.settings-section:last-child');
+    if (settingsSection) {
+        const successMsg = document.createElement('div');
+        successMsg.className = 'settings-success';
+        successMsg.textContent = 'Настройки успешно применены!';
+        successMsg.style.cssText = `
+            background: var(--success-light);
+            color: var(--success);
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-top: 12px;
+            font-size: 0.9rem;
+            text-align: center;
+        `;
+        
+        settingsSection.appendChild(successMsg);
+        
+        // Remove message after 2 seconds
+        setTimeout(() => {
+            if (successMsg.parentNode) {
+                successMsg.parentNode.removeChild(successMsg);
+            }
+        }, 2000);
+    }
+}
+
+// Export data to JSON file
+function exportData() {
+    const exportData = {
+        version: '1.0',
+        exportDate: new Date().toISOString(),
+        language: currentLanguage,
+        currency: currentCurrency,
+        transactions: transactions,
+        assets: assets,
+        liabilities: liabilities,
+        assetUsageCount: assetUsageCount,
+        liabilityUsageCount: liabilityUsageCount
+    };
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(dataBlob);
+    link.download = `cashflow-backup-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    
+    // Show success message
+    showDataMessage('Данные успешно экспортированы!', 'success');
+}
+
+// Import data from JSON file
+function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const importedData = JSON.parse(e.target.result);
+            
+            // Validate data structure
+            if (!importedData.transactions || !importedData.assets || !importedData.liabilities) {
+                throw new Error('Неверный формат файла');
+            }
+            
+            // Confirm import
+            if (confirm('Импортировать данные? Это заменит все текущие данные.')) {
+                // Import data
+                transactions = importedData.transactions || [];
+                assets = importedData.assets || [];
+                liabilities = importedData.liabilities || [];
+                assetUsageCount = importedData.assetUsageCount || {};
+                liabilityUsageCount = importedData.liabilityUsageCount || {};
+                
+                if (importedData.language) {
+                    currentLanguage = importedData.language;
+                    localStorage.setItem('language', currentLanguage);
+                }
+                
+                if (importedData.currency) {
+                    currentCurrency = importedData.currency;
+                    localStorage.setItem('currency', currentCurrency);
+                }
+                
+                // Save and update UI
+                saveData();
+                updateLanguage();
+                updateCurrencySymbols();
+                updateTransactions();
+                updateAssets();
+                updateLiabilities();
+                updateSummary();
+                
+                // Show success message
+                showDataMessage('Данные успешно импортированы!', 'success');
+                
+                // Close settings modal
+                setTimeout(() => {
+                    closeSettingsModal();
+                }, 1500);
+            }
+        } catch (error) {
+            showDataMessage('Ошибка при импорте: ' + error.message, 'error');
+        }
+    };
+    
+    reader.readAsText(file);
+    
+    // Reset file input
+    event.target.value = '';
+}
+
+// Show save indicator
+function showSaveIndicator() {
+    // Remove existing indicator
+    const existing = document.querySelector('.save-indicator');
+    if (existing) {
+        existing.remove();
+    }
+    
+    // Create indicator
+    const indicator = document.createElement('div');
+    indicator.className = 'save-indicator';
+    indicator.innerHTML = '💾 Сохранено';
+    indicator.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: var(--success);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        z-index: 10000;
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: all 0.3s ease;
+    `;
+    
+    document.body.appendChild(indicator);
+    
+    // Show indicator
+    setTimeout(() => {
+        indicator.style.opacity = '1';
+        indicator.style.transform = 'translateY(0)';
+    }, 100);
+    
+    // Hide indicator
+    setTimeout(() => {
+        indicator.style.opacity = '0';
+        indicator.style.transform = 'translateY(-10px)';
+        setTimeout(() => {
+            if (indicator.parentNode) {
+                indicator.parentNode.removeChild(indicator);
+            }
+        }, 300);
+    }, 2000);
+}
+
+// Update data management section with save info
+function updateDataSection() {
+    const dataSection = document.querySelector('.settings-section:nth-child(2)');
+    if (dataSection) {
+        const lastSaveTime = localStorage.getItem('lastSaveTime');
+        const infoDiv = dataSection.querySelector('.settings-info');
+        
+        if (infoDiv && lastSaveTime) {
+            const saveDate = new Date(lastSaveTime);
+            const formattedDate = saveDate.toLocaleString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            infoDiv.innerHTML = `
+                <small>Данные автоматически сохраняются локально на устройстве</small><br>
+                <small>Последнее сохранение: ${formattedDate}</small>
+            `;
+        }
+    }
+}
+
+// Show data operation message
+function showDataMessage(message, type) {
+    const dataSection = document.querySelector('.settings-section:nth-child(2)'); // Data management section
+    if (dataSection) {
+        const existingMsg = dataSection.querySelector('.data-message');
+        if (existingMsg) {
+            existingMsg.remove();
+        }
+        
+        const msg = document.createElement('div');
+        msg.className = 'data-message';
+        msg.textContent = message;
+        
+        const bgColor = type === 'success' ? 'var(--success-light)' : 'var(--danger-light)';
+        const textColor = type === 'success' ? 'var(--success)' : 'var(--danger)';
+        
+        msg.style.cssText = `
+            background: ${bgColor};
+            color: ${textColor};
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-top: 12px;
+            font-size: 0.9rem;
+            text-align: center;
+        `;
+        
+        dataSection.appendChild(msg);
+        
+        // Remove message after 3 seconds
+        setTimeout(() => {
+            if (msg.parentNode) {
+                msg.parentNode.removeChild(msg);
+            }
+        }, 3000);
+    }
+}
+
+// Auto-save data periodically
+function setupAutoSave() {
+    // Save data every 30 seconds
+    setInterval(() => {
+        saveData();
+    }, 30000);
+    
+    // Save data when page is about to unload
+    window.addEventListener('beforeunload', () => {
+        saveData();
+    });
+    
+    // Save data when page becomes hidden (mobile app switching)
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            saveData();
+        }
+    });
+    
+    // Save data when app loses focus (mobile)
+    window.addEventListener('blur', () => {
+        saveData();
+    });
+    
+    console.log('Автосохранение настроено');
 }
 

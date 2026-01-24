@@ -42,7 +42,7 @@
                     <h1 id="appTitle">💰 Финансовый Трекер</h1>
                 </div>
                 <div class="header-right">
-                    <button class="btn btn-primary install-btn" id="installAppBtn">⬇️ Скачать</button>
+                    <button class="btn btn-secondary settings-btn" id="settingsBtn">⚙️ Настройки</button>
                 </div>
             </div>
             <div class="header-controls">
@@ -383,6 +383,63 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeWithdrawAssetModal()" data-i18n="cancel">Отмена</button>
                 <button class="btn btn-warning" id="confirmWithdrawAssetBtn" data-i18n="withdrawBtn">Снять</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО НАСТРОЕК -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ Настройки</h2>
+                <button class="modal-close" onclick="closeSettingsModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h3>📱 Установка приложения</h3>
+                    <p>Установите приложение на устройство для быстрого доступа и офлайн работы.</p>
+                    <button class="btn btn-primary install-btn" id="installAppBtn">⬇️ Скачать</button>
+                </div>
+                <div class="settings-section">
+                    <h3>💾 Управление данными</h3>
+                    <p>Сохранение и восстановление данных приложения</p>
+                    <div class="settings-buttons-group">
+                        <button class="btn btn-info" onclick="exportData()">📤 Экспорт данных</button>
+                        <button class="btn btn-warning" onclick="document.getElementById('importFile').click()">📥 Импорт данных</button>
+                        <input type="file" id="importFile" style="display: none;" accept=".json" onchange="importData(event)">
+                    </div>
+                    <div class="settings-info">
+                        <small>Данные автоматически сохраняются локально на устройстве</small>
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <h3>☁️ Синхронизация</h3>
+                    <p>Синхронизация данных с Google Drive временно отключена.</p>
+                </div>
+                <div class="settings-section">
+                    <h3>🌐 Язык и валюта</h3>
+                    <div class="settings-form-group">
+                        <label for="settingsLanguage">Язык интерфейса:</label>
+                        <select id="settingsLanguage" class="settings-select">
+                            <option value="ru">Русский</option>
+                            <option value="uk">Українська</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+                    <div class="settings-form-group">
+                        <label for="settingsCurrency">Валюта:</label>
+                        <select id="settingsCurrency" class="settings-select">
+                            <option value="$">Доллар ($)</option>
+                            <option value="₴">Гривна (₴)</option>
+                            <option value="€">Евро (€)</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-success" onclick="applyLanguageSettings()">Применить</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeSettingsModal()">Закрыть</button>
             </div>
         </div>
     </div>

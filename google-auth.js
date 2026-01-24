@@ -420,8 +420,8 @@ function addGoogleAuthButton() {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    // Add Google Sign-In button
-    setTimeout(addGoogleAuthButton, 1000);
+    // Add Google Sign-In button - TEMPORARILY DISABLED
+    // setTimeout(addGoogleAuthButton, 1000);
     
     // Initialize Google Auth if available
     if (typeof gapi !== 'undefined' && typeof google !== 'undefined') {
