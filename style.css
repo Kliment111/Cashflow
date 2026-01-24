@@ -50,12 +50,161 @@ body {
   color: var(--dark);
   margin: 0;
   padding: var(--mobile-padding);
-  padding-bottom: calc(var(--mobile-padding) + 160px);
+  padding-bottom: calc(var(--mobile-padding) + 220px);
   font-size: 14px;
   min-height: 100vh;
   line-height: 1.6;
   overflow-x: hidden;
   transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Small phones (up to 375px) */
+@media (max-width: 375px) {
+  :root {
+    --mobile-padding: 12px;
+    --mobile-gap: 10px;
+  }
+  body {
+    font-size: 13px;
+  }
+  .container {
+    padding: 12px;
+    padding-bottom: 100px;
+  }
+  .header {
+    padding: 20px 12px;
+  }
+  .header h1 {
+    font-size: 1.5rem;
+  }
+  .swipe-tab {
+    font-size: 0.85rem;
+    padding: 14px 8px;
+  }
+  .panel-section {
+    padding: 12px;
+  }
+  .section-header h3 {
+    font-size: 1rem;
+  }
+  .total-amount, .amount {
+    font-size: 1.1rem;
+  }
+  .btn, .btn-restore, .btn-success, .btn-primary, .btn-info, .btn-secondary, .btn-danger, .btn-warning, .btn-income, .btn-expense {
+    font-size: 0.9rem;
+    padding: 10px 14px;
+  }
+}
+
+/* Medium phones (376px - 414px) */
+@media (min-width: 376px) and (max-width: 414px) {
+  :root {
+    --mobile-padding: 14px;
+    --mobile-gap: 11px;
+  }
+  body {
+    font-size: 14px;
+  }
+  .container {
+    padding-bottom: 110px;
+  }
+  .header {
+    padding: 24px 14px;
+  }
+  .header h1 {
+    font-size: 1.6rem;
+  }
+  .swipe-tab {
+    font-size: 0.9rem;
+    padding: 15px 10px;
+  }
+  .panel-section {
+    padding: 14px;
+  }
+  .section-header h3 {
+    font-size: 1.05rem;
+  }
+  .total-amount, .amount {
+    font-size: 1.15rem;
+  }
+  .btn, .btn-restore, .btn-success, .btn-primary, .btn-info, .btn-secondary, .btn-danger, .btn-warning, .btn-income, .btn-expense {
+    font-size: 0.95rem;
+    padding: 11px 15px;
+  }
+}
+
+/* Large phones (415px - 480px) */
+@media (min-width: 415px) and (max-width: 480px) {
+  :root {
+    --mobile-padding: 16px;
+    --mobile-gap: 12px;
+  }
+  body {
+    font-size: 15px;
+  }
+  .container {
+    padding-bottom: 120px;
+  }
+  .header {
+    padding: 26px 16px;
+  }
+  .header h1 {
+    font-size: 1.7rem;
+  }
+  .swipe-tab {
+    font-size: 0.95rem;
+    padding: 16px 12px;
+  }
+  .panel-section {
+    padding: 16px;
+  }
+  .section-header h3 {
+    font-size: 1.1rem;
+  }
+  .total-amount, .amount {
+    font-size: 1.2rem;
+  }
+  .btn, .btn-restore, .btn-success, .btn-primary, .btn-info, .btn-secondary, .btn-danger, .btn-warning, .btn-income, .btn-expense {
+    font-size: 1rem;
+    padding: 12px 16px;
+  }
+}
+
+/* Tablets and small desktops (481px - 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+  :root {
+    --mobile-padding: 20px;
+    --mobile-gap: 14px;
+  }
+  body {
+    font-size: 15px;
+  }
+  .container {
+    padding-bottom: 140px;
+  }
+  .header {
+    padding: 30px 20px;
+  }
+  .header h1 {
+    font-size: 1.9rem;
+  }
+  .swipe-tab {
+    font-size: 1rem;
+    padding: 18px 14px;
+  }
+  .panel-section {
+    padding: 18px;
+  }
+  .section-header h3 {
+    font-size: 1.2rem;
+  }
+  .total-amount, .amount {
+    font-size: 1.25rem;
+  }
+  .btn, .btn-restore, .btn-success, .btn-primary, .btn-info, .btn-secondary, .btn-danger, .btn-warning, .btn-income, .btn-expense {
+    font-size: 1rem;
+    padding: 13px 18px;
+  }
 }
 
 .container {
@@ -65,6 +214,7 @@ body {
   box-shadow: var(--shadow);
   margin: 0 auto;
   padding: var(--mobile-padding);
+  padding-bottom: 120px;
   max-width: 1200px;
   transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
@@ -121,6 +271,60 @@ body {
 
 .install-btn.is-visible {
   display: inline-flex;
+}
+
+.update-banner {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 2px solid var(--outline);
+  border-radius: var(--radius-lg);
+  padding: 10px 14px;
+  box-shadow: var(--shadow-lg);
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  z-index: 9999;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.update-banner.is-visible {
+  display: flex;
+}
+
+.update-banner .btn {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  min-height: auto;
+  width: auto;
+}
+
+@media (max-width: 640px) {
+  .header-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .header-right {
+    width: 100%;
+  }
+
+  .install-btn {
+    width: 100%;
+  }
+
+  .update-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
 .header-controls-top {

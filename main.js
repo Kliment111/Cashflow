@@ -3,6 +3,7 @@ let currentSwipePanel = 0; // 0 = transactions, 1 = assets/liabilities
 let touchStartX = 0;
 let touchEndX = 0;
 let deferredInstallPrompt = null;
+let refreshing = false;
 let isSwiping = false;
 let swipeStartPanel = 0;
 
@@ -222,9 +223,70 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./service-worker.js');
+        navigator.serviceWorker.register('./service-worker.js').then((registration) => {
+            if (registration.waiting) {
+                showUpdateBanner(registration);
+            }
+
+            registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                if (!newWorker) return;
+
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        showUpdateBanner(registration);
+                    }
+                });
+            });
+        });
+
+        const tryUpdate = () => {
+            navigator.serviceWorker.getRegistration().then((registration) => {
+                if (registration) {
+                    registration.update();
+                }
+            });
+        };
+
+        setInterval(tryUpdate, 30 * 60 * 1000);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                tryUpdate();
+            }
+        });
+
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (refreshing) return;
+            refreshing = true;
+            window.location.reload();
+        });
     }
 });
+
+function showUpdateBanner(registration) {
+    let banner = document.getElementById('updateBanner');
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'updateBanner';
+        banner.className = 'update-banner';
+        banner.innerHTML = `
+            <span>Доступна новая версия приложения.</span>
+            <button class="btn btn-success" id="updateBannerBtn">Обновить</button>
+        `;
+        document.body.appendChild(banner);
+    }
+
+    const button = banner.querySelector('#updateBannerBtn');
+    if (button) {
+        button.onclick = () => {
+            if (registration.waiting) {
+                registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+            }
+        };
+    }
+
+    banner.classList.add('is-visible');
+}
 
 window.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault();
