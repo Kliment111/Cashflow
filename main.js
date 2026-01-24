@@ -114,6 +114,81 @@ function handleTouchEnd(e) {
     }
 }
 
+// --- APP INITIALIZATION ---
+function initializeApp() {
+    // Load data and initialize
+    loadData();
+    updateAll();
+    initializeCustomSuggestions();
+    
+    // Start auto-backup system
+    startAutoBackup();
+    
+    // Set up event listeners
+    setupEventListeners();
+    
+    // Initialize swipe navigation
+    initializeSwipeNavigation();
+    
+    // Initialize PWA install button
+    initializeInstallButton();
+    
+    // Set current month
+    const now = new Date();
+    const monthInput = document.getElementById('monthInput');
+    if (monthInput) {
+        monthInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    }
+    
+    // Update month display
+    updateMonthDisplay();
+    
+    // Update suggestions when language changes
+    document.addEventListener('languageChanged', updateSuggestions);
+    
+    // Initialize custom suggestions
+    initializeCustomSuggestions();
+
+    // Set up month navigation
+    const prevBtn = document.getElementById('prevMonthBtn');
+    const nextBtn = document.getElementById('nextMonthBtn');
+    const todayBtn = document.getElementById('todayBtn');
+    
+    if (prevBtn) prevBtn.addEventListener('click', () => changeMonth(-1));
+    if (nextBtn) nextBtn.addEventListener('click', () => changeMonth(1));
+    if (todayBtn) todayBtn.addEventListener('click', () => {
+        currentMonth = new Date();
+        updateMonthDisplay();
+        updateSummary();
+    });
+    if (monthInput) monthInput.addEventListener('change', (e) => {
+        const [year, month] = e.target.value.split('-').map(Number);
+        currentMonth = new Date(year, month - 1);
+        updateSummary();
+    });
+
+    // Set up month end button
+    const monthEndBtn = document.getElementById('monthEndBtn');
+    if (monthEndBtn) {
+        monthEndBtn.addEventListener('click', endMonth);
+    }
+}
+
+function setupEventListeners() {
+    // Add any additional event listeners here
+    console.log('Event listeners set up');
+}
+
+function initializeSwipeNavigation() {
+    // Initialize swipe navigation is already handled in DOMContentLoaded
+    console.log('Swipe navigation initialized');
+}
+
+function initializeInstallButton() {
+    // PWA install button is already handled in DOMContentLoaded
+    console.log('Install button initialized');
+}
+
 // --- SPLASH SCREEN LOGIC ---
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize swipe navigation
@@ -188,15 +263,15 @@ document.addEventListener('DOMContentLoaded', function() {
             updateLanguage();
             
             // Обновляем все данные после загрузки
-            updateMonthDisplay();
-            updateTransactions();
-            updateAssets();
-            updateLiabilities();
-            updateSummary();
+            updateAll();
+            
+            // Initialize app after splash
+            initializeApp();
         };
     } else {
         // Если splash screen не найден, просто показываем приложение
         updateLanguage();
+        initializeApp();
     }
 
     const installButton = document.getElementById('installAppBtn');
@@ -303,7 +378,6 @@ function restoreHistory() {
     const storedTransactions = localStorage.getItem('transactions');
     const storedAssets = localStorage.getItem('assets');
     const storedLiabilities = localStorage.getItem('liabilities');
-    const storedLastMonthEnd = localStorage.getItem('lastMonthEnd');
 
     if (storedTransactions) {
         transactions = JSON.parse(storedTransactions);
@@ -313,9 +387,6 @@ function restoreHistory() {
     }
     if (storedLiabilities) {
         liabilities = JSON.parse(storedLiabilities);
-    }
-    if (storedLastMonthEnd) {
-        lastMonthEnd = new Date(storedLastMonthEnd);
     }
 
     updateAll();
@@ -343,7 +414,6 @@ let liabilities = [];
 let currentLanguage = 'ru';
 let currentCurrency = '$';
 let currentMonth = new Date();
-let lastMonthEnd = null;
 
 // Usage tracking for suggestions
 let assetUsageCount = {};
@@ -505,7 +575,7 @@ function showValidationError(message) {
     }, 3000);
 }
 
-function showTopUpConfirm(existingAsset, amount, rate, date) {
+function showTopUpConfirm(existingAsset, amount, rate) {
     // Create modal dynamically
     const modal = document.createElement('div');
     modal.className = 'modal active';
@@ -566,19 +636,12 @@ function closeWithdrawAssetModal() {
     }
 }
 
-function closeMonthEndModal() {
-    const modal = document.getElementById('monthEndModal');
-    if (modal) {
-        modal.classList.remove('active');
-    }
-}
 
 // --- TRANSACTION FUNCTIONS ---
 function addAssetTransaction() {
     const name = document.getElementById('assetName').value;
     const amount = parseFloat(document.getElementById('assetAmount').value);
     const rate = parseFloat(document.getElementById('assetRate').value) || 0;
-    const date = document.getElementById('assetDate').value;
 
     // Validation
     if (!name || !amount || amount <= 0) {
@@ -591,7 +654,7 @@ function addAssetTransaction() {
     
     if (existingAsset) {
         // Show confirmation to top up existing asset
-        showTopUpConfirm(existingAsset, amount, rate, date);
+        showTopUpConfirm(existingAsset, amount, rate);
     } else {
         // Track usage for suggestions
         trackAssetUsage(name);
@@ -602,7 +665,7 @@ function addAssetTransaction() {
             name: name,
             amount: amount,
             rate: rate,
-            date: date || new Date().toISOString().split('T')[0]
+            date: new Date().toISOString().split('T')[0]
         };
 
         assets.push(asset);
@@ -616,7 +679,6 @@ function addLiabilityTransaction() {
     const name = document.getElementById('liabilityName').value;
     const amount = parseFloat(document.getElementById('liabilityAmount').value);
     const rate = parseFloat(document.getElementById('liabilityRate').value) || 0;
-    const date = document.getElementById('liabilityDate').value;
 
     // Validation
     if (!name || !amount || amount <= 0) {
@@ -640,7 +702,7 @@ function addLiabilityTransaction() {
         amount: amount,
         rate: rate,
         paid: 0,
-        date: date || new Date().toISOString().split('T')[0]
+        date: new Date().toISOString().split('T')[0]
     };
 
     liabilities.push(liability);
@@ -884,44 +946,46 @@ function updateTransactions() {
     // Get current month transactions
     const currentMonthTransactions = getCurrentMonthTransactions();
     
+    // Group transactions by category
+    const incomeCategories = {};
+    const expenseCategories = {};
+    
     currentMonthTransactions.forEach(transaction => {
-        const item = document.createElement('div');
-        item.className = 'transaction-item';
-        item.style.cssText = `
-            background: var(--white);
-            padding: 12px;
-            border-radius: var(--radius);
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            margin-bottom: 8px;
-            box-shadow: var(--shadow-sm);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        `;
-        
-        const amountColor = transaction.type === 'income' ? 'var(--success)' : 'var(--danger)';
-        const prefix = transaction.type === 'income' ? '+' : '-';
-        
-        item.innerHTML = `
-            <div>
-                <div style="font-weight: 600; color: var(--dark); font-size: 0.9rem;">${transaction.description}</div>
-                <div style="color: var(--gray); font-size: 0.8rem;">${transaction.date}</div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="color: ${amountColor}; font-weight: 700; font-size: 1rem;">
-                    ${prefix} ${formatCurrency(transaction.amount)}
-                </div>
-                <button class="btn-delete-small" onclick="deleteTransaction(${transaction.id})" style="background: #ff4757; color: white; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;" onmousedown="event.stopPropagation()" onmouseup="event.stopPropagation()" ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()">×</button>
-            </div>
-        `;
+        const category = transaction.category || transaction.description;
         
         if (transaction.type === 'income') {
-            incomeList.appendChild(item);
+            if (!incomeCategories[category]) {
+                incomeCategories[category] = {
+                    amount: 0,
+                    transactions: []
+                };
+            }
+            incomeCategories[category].amount += transaction.amount;
+            incomeCategories[category].transactions.push(transaction);
             totalIncome += transaction.amount;
         } else {
-            expenseList.appendChild(item);
+            if (!expenseCategories[category]) {
+                expenseCategories[category] = {
+                    amount: 0,
+                    transactions: []
+                };
+            }
+            expenseCategories[category].amount += transaction.amount;
+            expenseCategories[category].transactions.push(transaction);
             totalExpense += transaction.amount;
         }
+    });
+    
+    // Create category items for income
+    Object.entries(incomeCategories).forEach(([category, data]) => {
+        const categoryItem = createCategoryItem(category, data.amount, data.transactions, 'income');
+        incomeList.appendChild(categoryItem);
+    });
+    
+    // Create category items for expenses
+    Object.entries(expenseCategories).forEach(([category, data]) => {
+        const categoryItem = createCategoryItem(category, data.amount, data.transactions, 'expense');
+        expenseList.appendChild(categoryItem);
     });
     
     // Update totals
@@ -935,6 +999,111 @@ function updateTransactions() {
     if (expenseList.children.length === 0) {
         expenseList.innerHTML = `<p class="empty-message">${t.noExpense}</p>`;
     }
+}
+
+function createCategoryItem(category, amount, transactions, type) {
+    const item = document.createElement('div');
+    item.className = 'category-item';
+    item.style.cssText = `
+        background: var(--white);
+        padding: 12px;
+        border-radius: var(--radius);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        margin-bottom: 8px;
+        box-shadow: var(--shadow-sm);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    `;
+    
+    const amountColor = type === 'income' ? 'var(--success)' : 'var(--danger)';
+    const prefix = type === 'income' ? '+' : '-';
+    const count = transactions.length;
+    
+    item.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-weight: 600; color: var(--dark); font-size: 0.9rem;">
+                    ${category}
+                    <span style="color: var(--gray); font-size: 0.8rem; margin-left: 8px;">(${count})</span>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="color: ${amountColor}; font-weight: 700; font-size: 1rem;">
+                    ${prefix} ${formatCurrency(amount)}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add click handler to show details
+    item.addEventListener('click', () => showCategoryDetails(category, transactions, type));
+    
+    // Add hover effect
+    item.addEventListener('mouseenter', () => {
+        item.style.transform = 'translateY(-2px)';
+        item.style.boxShadow = 'var(--shadow)';
+    });
+    
+    item.addEventListener('mouseleave', () => {
+        item.style.transform = 'translateY(0)';
+        item.style.boxShadow = 'var(--shadow-sm)';
+    });
+    
+    return item;
+}
+
+function showCategoryDetails(category, transactions, type) {
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    
+    const amountColor = type === 'income' ? 'var(--success)' : 'var(--danger)';
+    const prefix = type === 'income' ? '+' : '-';
+    const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
+    
+    modal.innerHTML = `
+        <div class="modal-backdrop"></div>
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>${type === 'income' ? '💰' : '💸'} ${category}</h2>
+                <button class="modal-close" onclick="this.closest('.modal').remove()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; margin-bottom: 20px; padding: 15px; background: ${amountColor}20; border-radius: 8px;">
+                    <div style="font-size: 1.5rem; font-weight: 700; color: ${amountColor};">
+                        ${prefix} ${formatCurrency(totalAmount)}
+                    </div>
+                    <div style="color: var(--gray); font-size: 0.9rem; margin-top: 5px;">
+                        ${transactions.length} транзакций
+                    </div>
+                </div>
+                <div style="max-height: 300px; overflow-y: auto;">
+                    ${transactions.map(transaction => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--light-gray);">
+                            <div>
+                                <div style="font-weight: 500; color: var(--dark); font-size: 0.9rem;">
+                                    ${transaction.description}
+                                </div>
+                                <div style="color: var(--gray); font-size: 0.8rem;">
+                                    ${transaction.date}
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="color: ${amountColor}; font-weight: 600; font-size: 0.9rem;">
+                                    ${prefix} ${formatCurrency(transaction.amount)}
+                                </div>
+                                <button class="btn-delete-small" onclick="deleteTransaction(${transaction.id}); this.closest('.modal').remove();" style="background: #ff4757; color: white; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer;">×</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Закрыть</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
 }
 
 function updateAssets() {
@@ -994,6 +1163,17 @@ function updateLiabilities() {
     totalElement.textContent = formatCurrency(total);
 }
 
+
+function getCurrentMonthTransactions() {
+    const currentMonthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+    const currentMonthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+    
+    return transactions.filter(transaction => {
+        const transactionDate = new Date(transaction.date);
+        return transactionDate >= currentMonthStart && transactionDate <= currentMonthEnd;
+    });
+}
+
 function updateSummary() {
     const incomeElement = document.getElementById('totalIncome');
     const expenseElement = document.getElementById('totalExpense');
@@ -1022,35 +1202,191 @@ function updateSummary() {
     balanceElement.textContent = formatCurrency(balance);
 }
 
-function getCurrentMonthTransactions() {
-    const currentMonthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-    const currentMonthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-    
-    return transactions.filter(transaction => {
-        const transactionDate = new Date(transaction.date);
-        return transactionDate >= currentMonthStart && transactionDate <= currentMonthEnd;
-    });
-}
-
 // --- UTILITY FUNCTIONS ---
 function formatCurrency(amount) {
     return `${amount.toFixed(2)} ${currentCurrency}`;
+}
+
+// --- ENHANCED AUTO-BACKUP SYSTEM ---
+
+// Автоматическое резервное копирование каждые 5 минут
+let autoBackupInterval;
+
+function startAutoBackup() {
+    // Сразу делаем бэкап
+    autoBackup();
+    
+    // Затем каждые 5 минут
+    autoBackupInterval = setInterval(autoBackup, 5 * 60 * 1000);
+}
+
+function stopAutoBackup() {
+    if (autoBackupInterval) {
+        clearInterval(autoBackupInterval);
+    }
+}
+
+// Улучшенное автоматическое резервное копирование
+function autoBackup() {
+    const data = {
+        transactions: transactions,
+        assets: assets,
+        liabilities: liabilities,
+        assetUsageCount: assetUsageCount,
+        liabilityUsageCount: liabilityUsageCount,
+        backupDate: new Date().toISOString(),
+        version: '1.0',
+        deviceInfo: navigator.userAgent,
+        lastBackupTime: Date.now()
+    };
+    
+    // Сохраняем в localStorage с меткой времени
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    localStorage.setItem(`cashflow-backup-${timestamp}`, JSON.stringify(data));
+    
+    // Обновляем последнюю копию
+    localStorage.setItem('cashflow-latest-backup', JSON.stringify(data));
+    
+    // Сохраняем последние 10 копий
+    const backups = JSON.parse(localStorage.getItem('cashflow-backups') || '[]');
+    backups.unshift({
+        timestamp: timestamp,
+        data: data
+    });
+    
+    // Оставляем только последние 10 копий
+    if (backups.length > 10) {
+        backups.splice(10);
+    }
+    
+    localStorage.setItem('cashflow-backups', JSON.stringify(backups));
+    
+    // Показываем уведомление о бэкапе
+    showBackupNotification();
+}
+
+// Уведомление о бэкапе
+function showBackupNotification() {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #4caf50;
+        color: white;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        transition: all 0.3s ease;
+    `;
+    notification.textContent = '💾 Данные сохранены';
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 2000);
+}
+
+// Восстановление из автосохранения
+function restoreFromAutoBackup() {
+    const backup = localStorage.getItem('cashflow-latest-backup');
+    
+    if (backup) {
+        if (confirm('Восстановить данные из последнего автосохранения?')) {
+            const data = JSON.parse(backup);
+            transactions = data.transactions || [];
+            assets = data.assets || [];
+            liabilities = data.liabilities || [];
+            assetUsageCount = data.assetUsageCount || {};
+            liabilityUsageCount = data.liabilityUsageCount || {};
+            
+            saveData();
+            updateAll();
+            alert('✅ Данные восстановлены из резервной копии!');
+        }
+    } else {
+        alert('❌ Резервная копия не найдена');
+    }
+}
+
+// Экспорт данных в файл
+function exportData() {
+    const data = {
+        transactions: transactions,
+        assets: assets,
+        liabilities: liabilities,
+        assetUsageCount: assetUsageCount,
+        liabilityUsageCount: liabilityUsageCount,
+        exportDate: new Date().toISOString(),
+        version: '1.0'
+    };
+    
+    const dataStr = JSON.stringify(data, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    
+    // Создаем ссылку для скачивания
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(dataBlob);
+    link.download = `cashflow-backup-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    
+    URL.revokeObjectURL(link.href);
+}
+
+// Импорт данных из файла
+function importData(file) {
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            
+            // Проверяем версию и структуру
+            if (data.version && data.transactions) {
+                // Подтверждение импорта
+                if (confirm('Импортировать данные? Текущие данные будут заменены.')) {
+                    transactions = data.transactions || [];
+                    assets = data.assets || [];
+                    liabilities = data.liabilities || [];
+                    assetUsageCount = data.assetUsageCount || {};
+                    liabilityUsageCount = data.liabilityUsageCount || {};
+                    
+                    saveData();
+                    updateAll();
+                    alert('✅ Данные успешно импортированы!');
+                }
+            } else {
+                alert('❌ Неверный формат файла резервной копии');
+            }
+        } catch (error) {
+            alert('❌ Ошибка при чтении файла: ' + error.message);
+        }
+    };
+    
+    reader.readAsText(file);
 }
 
 function saveData() {
     localStorage.setItem('transactions', JSON.stringify(transactions));
     localStorage.setItem('assets', JSON.stringify(assets));
     localStorage.setItem('liabilities', JSON.stringify(liabilities));
-    localStorage.setItem('lastMonthEnd', lastMonthEnd ? lastMonthEnd.toISOString() : '');
     localStorage.setItem('assetUsageCount', JSON.stringify(assetUsageCount));
     localStorage.setItem('liabilityUsageCount', JSON.stringify(liabilityUsageCount));
+    
+    // Автоматическое резервное копирование
+    autoBackup();
 }
 
 function loadData() {
     const storedTransactions = localStorage.getItem('transactions');
     const storedAssets = localStorage.getItem('assets');
     const storedLiabilities = localStorage.getItem('liabilities');
-    const storedLastMonthEnd = localStorage.getItem('lastMonthEnd');
     const storedLanguage = localStorage.getItem('language');
     const storedCurrency = localStorage.getItem('currency');
     const storedAssetUsage = localStorage.getItem('assetUsageCount');
@@ -1059,7 +1395,6 @@ function loadData() {
     if (storedTransactions) transactions = JSON.parse(storedTransactions);
     if (storedAssets) assets = JSON.parse(storedAssets);
     if (storedLiabilities) liabilities = JSON.parse(storedLiabilities);
-    if (storedLastMonthEnd) lastMonthEnd = new Date(storedLastMonthEnd);
     if (storedLanguage) currentLanguage = storedLanguage;
     if (storedCurrency) currentCurrency = storedCurrency;
     if (storedAssetUsage) assetUsageCount = JSON.parse(storedAssetUsage);
@@ -1262,42 +1597,6 @@ function changeMonth(direction) {
     updateSummary();
 }
 
-// --- INITIALIZATION ---
-document.addEventListener('DOMContentLoaded', function() {
-    loadData();
-    updateAll();
-    updateMonthDisplay();
-    updateLanguage(); // Apply language and currency on load
-
-    // Initialize custom suggestions
-    initializeCustomSuggestions();
-
-    // Set up month navigation
-    const prevBtn = document.getElementById('prevMonthBtn');
-    const nextBtn = document.getElementById('nextMonthBtn');
-    const todayBtn = document.getElementById('todayBtn');
-    const monthInput = document.getElementById('monthInput');
-
-    if (prevBtn) prevBtn.addEventListener('click', () => changeMonth(-1));
-    if (nextBtn) nextBtn.addEventListener('click', () => changeMonth(1));
-    if (todayBtn) todayBtn.addEventListener('click', () => {
-        currentMonth = new Date();
-        updateMonthDisplay();
-        updateSummary();
-    });
-    if (monthInput) monthInput.addEventListener('change', (e) => {
-        const [year, month] = e.target.value.split('-').map(Number);
-        currentMonth = new Date(year, month - 1);
-        updateSummary();
-    });
-
-    // Set up month end button
-    const monthEndBtn = document.getElementById('monthEndBtn');
-    if (monthEndBtn) {
-        monthEndBtn.addEventListener('click', endMonth);
-    }
-});
-
 function endMonth() {
     const t = translations[currentLanguage];
     
@@ -1319,41 +1618,46 @@ function endMonth() {
     const totalLiabilities = liabilities.reduce((sum, liability) => sum + (liability.amount - liability.paid), 0);
     const netWorth = totalAssets - totalLiabilities;
 
-    // Show results modal
-    const modal = document.getElementById('monthEndModal');
-    const modalBody = document.getElementById('monthEndModalBody');
-    
-    if (modal && modalBody) {
-        modalBody.innerHTML = `
-            <h3>${t.monthEndTitle}</h3>
-            <div style="display: grid; gap: 12px; margin: 20px 0;">
-                <div style="display: flex; justify-content: space-between; padding: 12px; background: #f0fdf4; border-radius: 8px;">
-                    <span>${t.incomeLabel}</span>
-                    <strong style="color: #16a34a;">${formatCurrency(income)}</strong>
-                </div>
-                <div style="display: flex; justify-content: space-between; padding: 12px; background: #fef2f2; border-radius: 8px;">
-                    <span>${t.expenseLabel}</span>
-                    <strong style="color: #dc2626;">${formatCurrency(expense)}</strong>
-                </div>
-                <div style="display: flex; justify-content: space-between; padding: 12px; background: #f0f9ff; border-radius: 8px;">
-                    <span>${t.balanceLabel}</span>
-                    <strong style="color: #2563eb;">${formatCurrency(balance)}</strong>
-                </div>
-                <div style="display: flex; justify-content: space-between; padding: 12px; background: #fefce8; border-radius: 8px;">
-                    <span>${t.netWorth}</span>
-                    <strong style="color: #ca8a04;">${formatCurrency(netWorth)}</strong>
-                </div>
+    // Create modal dynamically
+    const modal = document.createElement('div');
+    modal.className = 'modal active month-end-modal';
+    modal.innerHTML = `
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📅 Месяц завершён</h2>
+                <button class="modal-close" onclick="this.closest('.modal').remove()">✕</button>
             </div>
-            <p style="text-align: center; color: #6b7280; font-size: 14px;">
-                ${balance >= 0 ? t.greatMonth : t.nextMonthBetter}
-            </p>
-        `;
-        modal.classList.add('active');
-    }
-
-    // Mark month as ended
-    lastMonthEnd = new Date();
-    saveData();
+            <div class="modal-body">
+                <div style="display: grid; gap: 12px; margin: 20px 0;">
+                    <div style="display: flex; justify-content: space-between; padding: 12px; background: #d1fae5; border-radius: 8px;">
+                        <span>Доходы:</span>
+                        <strong style="color: #059669;">${formatCurrency(income)}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 12px; background: #fee2e2; border-radius: 8px;">
+                        <span>Расходы:</span>
+                        <strong style="color: #dc2626;">${formatCurrency(expense)}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 12px; background: #dbeafe; border-radius: 8px;">
+                        <span>Баланс:</span>
+                        <strong style="color: #2563eb;">${formatCurrency(balance)}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 12px; background: #fef3c7; border-radius: 8px;">
+                        <span>Чистая стоимость:</span>
+                        <strong style="color: #d97706;">${formatCurrency(netWorth)}</strong>
+                    </div>
+                </div>
+                <p style="text-align: center; color: #6b7280; font-size: 14px;">
+                    ${balance >= 0 ? '🎉 Отличный месяц!' : '💪 В следующем месяце будет лучше!'}
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-success" onclick="this.closest('.modal').remove()">ОК</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
 }
 
 // --- LANGUAGE SUPPORT ---
@@ -1399,13 +1703,6 @@ const translations = {
         paidAmount: 'Погашено:',
         remainingAmount: 'Осталось:',
         payAmount: 'Сумма погашения ($):',
-        monthEndTitle: '📅 Месяц завершён',
-        incomeLabel: 'Доходы:',
-        expenseLabel: 'Расходы:',
-        balanceLabel: 'Баланс:',
-        netWorth: 'Чистая стоимость:',
-        greatMonth: '🎉 Отличный месяц!',
-        nextMonthBetter: '💪 В следующем месяце будет лучше!',
         incomeExpenseTab: '💰 Доходы/Расходы',
         assetsLiabilitiesTab: '💳 Активы/Пассивы'
     },
@@ -1450,13 +1747,6 @@ const translations = {
         paidAmount: 'Погашено:',
         remainingAmount: 'Залишилось:',
         payAmount: 'Сума погашення ($):',
-        monthEndTitle: '📅 Місяць завершено',
-        incomeLabel: 'Доходи:',
-        expenseLabel: 'Витрати:',
-        balanceLabel: 'Баланс:',
-        netWorth: 'Чиста вартість:',
-        greatMonth: '🎉 Чудовий місяць!',
-        nextMonthBetter: '💪 Наступного місяця буде краще!',
         incomeExpenseTab: '💰 Доходи/Витрати',
         assetsLiabilitiesTab: '💳 Активи/Пасиви'
     },
@@ -1501,13 +1791,6 @@ const translations = {
         paidAmount: 'Paid:',
         remainingAmount: 'Remaining:',
         payAmount: 'Payment amount ($):',
-        monthEndTitle: '📅 Month Completed',
-        incomeLabel: 'Income:',
-        expenseLabel: 'Expenses:',
-        balanceLabel: 'Balance:',
-        netWorth: 'Net Worth:',
-        greatMonth: '🎉 Great month!',
-        nextMonthBetter: '💪 Next month will be better!',
         incomeExpenseTab: '💰 Income/Expenses',
         assetsLiabilitiesTab: '💳 Assets/Liabilities'
     }
@@ -1639,7 +1922,3 @@ function updateModalContent() {
     if (cancelBtn && t.cancel) cancelBtn.textContent = t.cancel;
 }
 
-function formatCurrency(amount) {
-    const currency = currencies[currentCurrency];
-    return `${amount.toFixed(2)} ${currency.symbol}`;
-}

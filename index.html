@@ -42,7 +42,7 @@
                     <h1 id="appTitle">💰 Финансовый Трекер</h1>
                 </div>
                 <div class="header-right">
-                    <button class="btn btn-primary install-btn" id="installAppBtn">⬇️ Скачать приложение</button>
+                    <button class="btn btn-primary install-btn" id="installAppBtn">⬇️ Скачать</button>
                 </div>
             </div>
             <div class="header-controls">
@@ -55,26 +55,6 @@
         </div>
 
         <div class="main-grid">
-            <!-- ИТОГИ -->
-            <div class="panel-section summary-panel">
-                <h3>📈 Итоги</h3>
-                <div class="summary-grid">
-                    <div class="summary-item income">
-                        <p class="label" data-i18n="income">Доходы</p>
-                        <p class="amount" id="totalIncome">0 $</p>
-                    </div>
-                    <div class="summary-item expense">
-                        <p class="label" data-i18n="expense">Расходы</p>
-                        <p class="amount" id="totalExpense">0 $</p>
-                    </div>
-                    <div class="summary-item balance">
-                        <p class="label" data-i18n="balance">Баланс</p>
-                        <p class="amount" id="totalBalance">0 $</p>
-                    </div>
-                </div>
-                <button class="btn btn-primary" id="monthEndBtn" data-i18n="monthEnd">📅 Закончить месяц</button>
-            </div>
-
             <!-- СВАЙП НАВИГАЦИЯ: Доходы/Расходы и Активы/Пассивы -->
             <div class="swipe-container">
                 <div class="swipe-tabs">
@@ -130,26 +110,12 @@
                     </div>
                 </div>
             </div>
+            
         </div>
     </div>
+
 
     <!-- МОДАЛЬНЫЕ ОКНА -->
-    <!-- Модальное окно завершения месяца -->
-    <div id="monthEndModal" class="modal month-end-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <span class="modal-title">📅 Месяц завершён</span>
-                <button class="modal-close" onclick="closeMonthEndModal()">✕</button>
-            </div>
-            <div class="modal-body" id="monthEndModalBody">
-                <!-- Динамический текст результата -->
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-success" onclick="closeMonthEndModal()">ОК</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Восстановление истории: красивое модальное окно -->
     <div id="restoreSuccessModal" class="modal restore-modal">
         <div class="modal-content">
@@ -421,6 +387,30 @@
         </div>
     </div>
 
+    <!-- КРАТКОЕ ИЗЛОЖЕНИЕ - Compact bottom bar -->
+    <div class="summary-bar">
+        <div class="summary-bar-container">
+            <div class="summary-info">
+                <div class="summary-item compact">
+                    <span class="summary-label" data-i18n="income">Доходы</span>
+                    <span class="summary-amount income-amount" id="totalIncome">0 $</span>
+                </div>
+                <div class="summary-item compact">
+                    <span class="summary-label" data-i18n="expense">Расходы</span>
+                    <span class="summary-amount expense-amount" id="totalExpense">0 $</span>
+                </div>
+                <div class="summary-item compact">
+                    <span class="summary-label" data-i18n="balance">Баланс</span>
+                    <span class="summary-amount balance-amount" id="totalBalance">0 $</span>
+                </div>
+            </div>
+            <button class="btn btn-compact" id="monthEndBtn" data-i18n="monthEnd">
+                📅 Закончить месяц
+            </button>
+        </div>
+    </div>
+
     <script src="main.js"></script>
+    <script src="google-auth.js"></script>
 </body>
 </html>
