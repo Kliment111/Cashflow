@@ -2,6 +2,7 @@
 let currentSwipePanel = 0; // 0 = transactions, 1 = assets/liabilities
 let touchStartX = 0;
 let touchEndX = 0;
+let deferredInstallPrompt = null;
 let isSwiping = false;
 let swipeStartPanel = 0;
 
@@ -195,6 +196,43 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         // Если splash screen не найден, просто показываем приложение
         updateLanguage();
+    }
+
+    const installButton = document.getElementById('installAppBtn');
+    const isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+    const isInStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+    if (installButton) {
+        installButton.addEventListener('click', async () => {
+            if (deferredInstallPrompt) {
+                deferredInstallPrompt.prompt();
+                const choiceResult = await deferredInstallPrompt.userChoice;
+                if (choiceResult.outcome === 'accepted') {
+                    installButton.classList.remove('is-visible');
+                }
+                deferredInstallPrompt = null;
+            } else if (isIos && !isInStandalone) {
+                alert('На iPhone: нажмите «Поделиться» и выберите «На экран Домой».');
+            }
+        });
+
+        if (isIos && !isInStandalone) {
+            installButton.classList.add('is-visible');
+        }
+    }
+
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./service-worker.js');
+    }
+});
+
+window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+
+    const installButton = document.getElementById('installAppBtn');
+    if (installButton) {
+        installButton.classList.add('is-visible');
     }
 });
 

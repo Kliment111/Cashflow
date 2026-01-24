@@ -112,6 +112,17 @@ body {
   flex-shrink: 0;
 }
 
+.install-btn {
+  display: none;
+  width: auto;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+}
+
+.install-btn.is-visible {
+  display: inline-flex;
+}
+
 .header-controls-top {
   display: flex;
   align-items: center;
