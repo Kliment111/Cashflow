@@ -1,45 +1,41 @@
-// --- SWIPE NAVIGATION ---
-let currentSwipePanel = 0; // 0 = transactions, 1 = assets/liabilities
+// --- DІЯ STYLE NAVIGATION ---
+let currentTab = 'income'; // income, expense, assets, liabilities
 let touchStartX = 0;
 let touchEndX = 0;
 let deferredInstallPrompt = null;
 let refreshing = false;
 let isSwiping = false;
-let swipeStartPanel = 0;
+let swipeStartTab = '';
 
-function switchToTransactions() {
-    currentSwipePanel = 0;
-    updateSwipePanel();
-    updateSwipeTabs();
-    // Scroll to top of swipe container
-    const swipeContainer = document.querySelector('.swipe-container');
-    if (swipeContainer) {
-        swipeContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+// Tab switching functions
+function switchToTab(tabName) {
+    currentTab = tabName;
+    updateDiaPanel();
+    updateDiaTabs();
+    updateIndicators();
+    
+    // Scroll to top of dia container
+    const diaContainer = document.querySelector('.dia-container');
+    if (diaContainer) {
+        diaContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 }
 
-function switchToAssetsLiabilities() {
-    currentSwipePanel = 1;
-    updateSwipePanel();
-    updateSwipeTabs();
-    // Scroll to top of swipe container
-    const swipeContainer = document.querySelector('.swipe-container');
-    if (swipeContainer) {
-        swipeContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+function updateDiaPanel() {
+    const panels = document.querySelectorAll('.dia-panel');
+    panels.forEach(panel => {
+        if (panel.dataset.panel === currentTab) {
+            panel.classList.add('active');
+        } else {
+            panel.classList.remove('active');
+        }
+    });
 }
 
-function updateSwipePanel() {
-    const swipeContent = document.getElementById('swipeContent');
-    if (swipeContent) {
-        swipeContent.style.transform = `translateX(-${currentSwipePanel * 100}%)`;
-    }
-}
-
-function updateSwipeTabs() {
-    const tabs = document.querySelectorAll('.swipe-tab');
-    tabs.forEach((tab, index) => {
-        if (index === currentSwipePanel) {
+function updateDiaTabs() {
+    const tabs = document.querySelectorAll('.dia-tab');
+    tabs.forEach(tab => {
+        if (tab.dataset.tab === currentTab) {
             tab.classList.add('active');
         } else {
             tab.classList.remove('active');
@@ -47,71 +43,83 @@ function updateSwipeTabs() {
     });
 }
 
-// Touch events for swipe - CONTROLLED SWIPE
+function updateIndicators() {
+    const indicators = document.querySelectorAll('.indicator');
+    indicators.forEach(indicator => {
+        if (indicator.dataset.indicator === currentTab) {
+            indicator.classList.add('active');
+        } else {
+            indicator.classList.remove('active');
+        }
+    });
+}
+
+// Touch events for swipe navigation
 function handleTouchStart(e) {
-    // Ignore if touch is on interactive elements
-    if (e.target.closest('button') || e.target.closest('input') || e.target.closest('select') || e.target.closest('a')) {
-        return;
-    }
-    
-    touchStartX = e.touches[0].clientX;
-    swipeStartPanel = currentSwipePanel;
-    isSwiping = true;
-    
-    // Disable transition during drag
-    const swipeContent = document.getElementById('swipeContent');
-    if (swipeContent) {
-        swipeContent.style.transition = 'none';
-    }
+    touchStartX = e.changedTouches[0].screenX;
+    swipeStartTab = currentTab;
+    isSwiping = false;
 }
 
 function handleTouchMove(e) {
-    if (!isSwiping) return;
+    if (!touchStartX) return;
     
-    const swipeContent = document.getElementById('swipeContent');
-    if (!swipeContent) return;
+    const touchEndX = e.changedTouches[0].screenX;
+    const diff = touchStartX - touchEndX;
     
-    const currentX = e.touches[0].clientX;
-    touchEndX = currentX; // Обновляем позицию конца для handleTouchEnd
-    const diff = touchStartX - currentX;
-    
-    // Calculate the percentage of drag
-    const dragPercent = (diff / swipeContent.offsetWidth) * 100;
-    
-    // Translate based on current panel + drag
-    const translateX = (swipeStartPanel * 100) + dragPercent;
-    swipeContent.style.transform = `translateX(-${translateX}%)`;
+    // Only start swipe if moved enough
+    if (Math.abs(diff) > 10) {
+        isSwiping = true;
+    }
 }
 
 function handleTouchEnd(e) {
-    if (!isSwiping) return;
+    if (!touchStartX || !isSwiping) return;
+    
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipeGesture();
+    
+    touchStartX = 0;
+    touchEndX = 0;
     isSwiping = false;
-    
-    const swipeContent = document.getElementById('swipeContent');
-    if (!swipeContent) return;
-    
-    // Re-enable transition
-    swipeContent.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-    
+}
+
+function handleSwipeGesture() {
+    const swipeThreshold = 50;
     const diff = touchStartX - touchEndX;
-    const swipeThreshold = swipeContent.offsetWidth * 0.2; // 20% threshold
+    const tabs = ['income', 'expense', 'assets', 'liabilities'];
+    const currentIndex = tabs.indexOf(currentTab);
     
-    // Determine which panel to snap to
     if (Math.abs(diff) > swipeThreshold) {
-        if (diff > 0 && currentSwipePanel === 0) {
-            // Swipe right - switch to assets/liabilities
-            switchToAssetsLiabilities();
-        } else if (diff < 0 && currentSwipePanel === 1) {
-            // Swipe left - switch to transactions
-            switchToTransactions();
-        } else {
-            // Return to current panel
-            updateSwipePanel();
+        if (diff > 0 && currentIndex < tabs.length - 1) {
+            // Swipe left - next tab
+            switchToTab(tabs[currentIndex + 1]);
+        } else if (diff < 0 && currentIndex > 0) {
+            // Swipe right - previous tab
+            switchToTab(tabs[currentIndex - 1]);
         }
-    } else {
-        // Didn't swipe far enough - return to current panel
-        updateSwipePanel();
     }
+}
+
+// Touch events initialization moved to initializeDiaNavigation()
+
+// --- LEGACY SWIPE NAVIGATION (for backward compatibility) ---
+let currentSwipePanel = 0; // 0 = transactions, 1 = assets/liabilities
+
+function switchToTransactions() {
+    switchToTab('income'); // Redirect to new tab system
+}
+
+function switchToAssetsLiabilities() {
+    switchToTab('assets'); // Redirect to new tab system
+}
+
+function updateSwipePanel() {
+    // Legacy function - now handled by updateDiaPanel
+}
+
+function updateSwipeTabs() {
+    // Legacy function - now handled by updateDiaTabs
 }
 
 // --- APP INITIALIZATION ---
@@ -130,61 +138,215 @@ function initializeApp() {
     // Set up event listeners
     setupEventListeners();
     
-    // Initialize swipe navigation
-    initializeSwipeNavigation();
+    // Initialize DІЯ navigation (replaces old swipe navigation)
+    initializeDiaNavigation();
     
     // Initialize PWA install button
     initializeInstallButton();
     
     // Set current month
-    const now = new Date();
-    const monthInput = document.getElementById('monthInput');
-    if (monthInput) {
-        monthInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    }
+    currentMonth = new Date();
     
     // Update month display
     updateMonthDisplay();
+}
+
+// Initialize DІЯ navigation
+function initializeDiaNavigation() {
+    const diaContainer = document.querySelector('.dia-container');
+    if (diaContainer) {
+        diaContainer.addEventListener('touchstart', handleTouchStart, { passive: true });
+        diaContainer.addEventListener('touchmove', handleTouchMove, { passive: true });
+        diaContainer.addEventListener('touchend', handleTouchEnd, { passive: true });
+    }
     
+    // Initialize indicators click events
+    const indicators = document.querySelectorAll('.indicator');
+    indicators.forEach(indicator => {
+        indicator.addEventListener('click', function() {
+            switchToTab(this.dataset.indicator);
+        });
+    });
+}
+
+// --- CALENDAR FUNCTIONALITY ---
+let calendarCurrentDate = new Date();
+let calendarSelectedDate = null;
+
+function initializeCalendar() {
+    const calendarBtn = document.getElementById('calendarBtn');
+    const calendarDropdown = document.getElementById('calendarDropdown');
+    const calendarPrevBtn = document.getElementById('calendarPrevBtn');
+    const calendarNextBtn = document.getElementById('calendarNextBtn');
+    
+    // Toggle calendar
+    calendarBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        calendarDropdown.classList.toggle('show');
+        if (calendarDropdown.classList.contains('show')) {
+            renderCalendar();
+        }
+    });
+    
+    // Close calendar when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!calendarDropdown.contains(e.target) && e.target !== calendarBtn) {
+            calendarDropdown.classList.remove('show');
+        }
+    });
+    
+    // Navigation buttons
+    calendarPrevBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        calendarCurrentDate.setMonth(calendarCurrentDate.getMonth() - 1);
+        renderCalendar();
+    });
+    
+    calendarNextBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        calendarCurrentDate.setMonth(calendarCurrentDate.getMonth() + 1);
+        renderCalendar();
+    });
+}
+
+function renderCalendar() {
+    const year = calendarCurrentDate.getFullYear();
+    const month = calendarCurrentDate.getMonth();
+    
+    // Update title
+    const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+                       'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+    document.getElementById('calendarTitle').textContent = `${monthNames[month]} ${year}`;
+    
+    // Clear grid
+    const calendarGrid = document.getElementById('calendarGrid');
+    calendarGrid.innerHTML = '';
+    
+    // Add weekdays
+    const weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    const weekdaysRow = document.createElement('div');
+    weekdaysRow.className = 'calendar-weekdays';
+    weekdays.forEach(day => {
+        const dayElement = document.createElement('div');
+        dayElement.className = 'calendar-weekday';
+        dayElement.textContent = day;
+        weekdaysRow.appendChild(dayElement);
+    });
+    calendarGrid.appendChild(weekdaysRow);
+    
+    // Add days
+    const daysRow = document.createElement('div');
+    daysRow.className = 'calendar-days';
+    
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const prevLastDay = new Date(year, month, 0);
+    
+    const firstDayOfWeek = firstDay.getDay() || 7; // Sunday = 7
+    const daysInMonth = lastDay.getDate();
+    const daysInPrevMonth = prevLastDay.getDate();
+    
+    const today = new Date();
+    const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+    const todayDate = today.getDate();
+    
+    // Previous month days
+    for (let i = firstDayOfWeek - 2; i >= 0; i--) {
+        const dayElement = createDayElement(daysInPrevMonth - i, true, false, false, year, month - 1);
+        daysRow.appendChild(dayElement);
+    }
+    
+    // Current month days
+    for (let day = 1; day <= daysInMonth; day++) {
+        const isToday = isCurrentMonth && day === todayDate;
+        const hasTransactions = checkTransactionsForDate(year, month, day);
+        const dayElement = createDayElement(day, false, isToday, hasTransactions, year, month);
+        daysRow.appendChild(dayElement);
+    }
+    
+    // Next month days
+    const totalCells = daysRow.children.length;
+    const remainingCells = 42 - totalCells; // 6 weeks * 7 days
+    for (let day = 1; day <= remainingCells; day++) {
+        const dayElement = createDayElement(day, true, false, false, year, month + 1);
+        daysRow.appendChild(dayElement);
+    }
+    
+    calendarGrid.appendChild(daysRow);
+}
+
+function createDayElement(day, isOtherMonth, isToday, hasTransactions, year, month) {
+    const dayElement = document.createElement('button');
+    dayElement.className = 'calendar-day';
+    dayElement.textContent = day;
+    
+    if (isOtherMonth) {
+        dayElement.classList.add('other-month');
+    }
+    
+    if (isToday) {
+        dayElement.classList.add('today');
+    }
+    
+    if (hasTransactions) {
+        dayElement.classList.add('has-transactions');
+    }
+    
+    // Add click handler
+    dayElement.addEventListener('click', function(e) {
+        e.stopPropagation();
+        selectDate(year, month, day);
+    });
+    
+    return dayElement;
+}
+
+function checkTransactionsForDate(year, month, day) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return transactions.some(t => t.date === dateStr);
+}
+
+function selectDate(year, month, day) {
+    // Remove previous selection
+    document.querySelectorAll('.calendar-day.selected').forEach(el => {
+        el.classList.remove('selected');
+    });
+    
+    // Add selection to clicked day
+    const days = document.querySelectorAll('.calendar-day');
+    days.forEach(dayEl => {
+        if (dayEl.textContent == day && !dayEl.classList.contains('other-month')) {
+            dayEl.classList.add('selected');
+        }
+    });
+    
+    // Update current month in the app
+    currentMonth = new Date(year, month, 1);
+    
+    // Update displays
+    updateMonthDisplay();
+    updateAll();
+    
+    // Close calendar
+    document.getElementById('calendarDropdown').classList.remove('show');
+}
+
+// --- EVENT LISTENERS SETUP ---
+function setupEventListeners() {
     // Update suggestions when language changes
     document.addEventListener('languageChanged', updateSuggestions);
     
     // Initialize custom suggestions
     initializeCustomSuggestions();
 
-    // Set up month navigation
-    const prevBtn = document.getElementById('prevMonthBtn');
-    const nextBtn = document.getElementById('nextMonthBtn');
-    const todayBtn = document.getElementById('todayBtn');
-    
-    if (prevBtn) prevBtn.addEventListener('click', () => changeMonth(-1));
-    if (nextBtn) nextBtn.addEventListener('click', () => changeMonth(1));
-    if (todayBtn) todayBtn.addEventListener('click', () => {
-        currentMonth = new Date();
-        updateMonthDisplay();
-        updateSummary();
-    });
-    if (monthInput) monthInput.addEventListener('change', (e) => {
-        const [year, month] = e.target.value.split('-').map(Number);
-        currentMonth = new Date(year, month - 1);
-        updateSummary();
-    });
-
     // Set up month end button
     const monthEndBtn = document.getElementById('monthEndBtn');
     if (monthEndBtn) {
         monthEndBtn.addEventListener('click', endMonth);
     }
-}
-
-function setupEventListeners() {
-    // Add any additional event listeners here
-    console.log('Event listeners set up');
-}
-
-function initializeSwipeNavigation() {
-    // Initialize swipe navigation is already handled in DOMContentLoaded
-    console.log('Swipe navigation initialized');
+    
+    // Initialize calendar
+    initializeCalendar();
 }
 
 function initializeInstallButton() {
@@ -815,8 +977,112 @@ function deleteLiability(id) {
     showDeleteConfirm('пассив', 'deleteLiability', id);
 }
 
-function deleteTransaction(id) {
-    showDeleteConfirm('транзакцию', 'deleteTransaction', id);
+function editTransaction(type, id) {
+    const transaction = transactions.find(t => t.id === id);
+    if (!transaction) return;
+    
+    if (type === 'income') {
+        // Fill income modal with transaction data
+        document.getElementById('incomeType').value = transaction.category || 'other';
+        document.getElementById('incomeDescription').value = transaction.description;
+        document.getElementById('incomeAmount').value = transaction.amount;
+        document.getElementById('incomeDate').value = transaction.date;
+        
+        // Store editing ID
+        window.editingTransactionId = id;
+        
+        // Change modal title and button
+        const modal = document.getElementById('incomeModal');
+        modal.querySelector('h2').textContent = '💰 Редактировать доход';
+        modal.querySelector('.btn-income').textContent = 'Сохранить изменения';
+        modal.querySelector('.btn-income').onclick = function() {
+            updateTransaction(id, 'income');
+        };
+        
+        openIncomeModal();
+    } else if (type === 'expense') {
+        // Fill expense modal with transaction data
+        document.getElementById('expenseType').value = transaction.category || 'other';
+        document.getElementById('expenseDescription').value = transaction.description;
+        document.getElementById('expenseAmount').value = transaction.amount;
+        document.getElementById('expenseDate').value = transaction.date;
+        
+        // Store editing ID
+        window.editingTransactionId = id;
+        
+        // Change modal title and button
+        const modal = document.getElementById('expenseModal');
+        modal.querySelector('h2').textContent = '💸 Редактировать расход';
+        modal.querySelector('.btn-expense').textContent = 'Сохранить изменения';
+        modal.querySelector('.btn-expense').onclick = function() {
+            updateTransaction(id, 'expense');
+        };
+        
+        openExpenseModal();
+    }
+}
+
+function updateTransaction(id, type) {
+    const transaction = transactions.find(t => t.id === id);
+    if (!transaction) return;
+    
+    if (type === 'income') {
+        transaction.category = document.getElementById('incomeType').value;
+        transaction.description = document.getElementById('incomeDescription').value;
+        transaction.amount = parseFloat(document.getElementById('incomeAmount').value);
+        transaction.date = document.getElementById('incomeDate').value;
+        
+        closeIncomeModal();
+    } else if (type === 'expense') {
+        transaction.category = document.getElementById('expenseType').value;
+        transaction.description = document.getElementById('expenseDescription').value;
+        transaction.amount = parseFloat(document.getElementById('expenseAmount').value);
+        transaction.date = document.getElementById('expenseDate').value;
+        
+        closeExpenseModal();
+    }
+    
+    // Reset modal
+    resetModal(type);
+    
+    // Update displays
+    updateAll();
+    saveData();
+}
+
+function resetModal(type) {
+    window.editingTransactionId = null;
+    
+    if (type === 'income') {
+        const modal = document.getElementById('incomeModal');
+        modal.querySelector('h2').textContent = '💰 Добавить доход';
+        modal.querySelector('.btn-income').textContent = 'Добавить';
+        modal.querySelector('.btn-income').onclick = addIncomeTransaction;
+        document.getElementById('incomeType').value = 'other';
+        document.getElementById('incomeDescription').value = '';
+        document.getElementById('incomeAmount').value = '';
+        document.getElementById('incomeDate').value = new Date().toISOString().split('T')[0];
+    } else if (type === 'expense') {
+        const modal = document.getElementById('expenseModal');
+        modal.querySelector('h2').textContent = '💸 Добавить расход';
+        modal.querySelector('.btn-expense').textContent = 'Добавить';
+        modal.querySelector('.btn-expense').onclick = addExpenseTransaction;
+        document.getElementById('expenseType').value = 'other';
+        document.getElementById('expenseDescription').value = '';
+        document.getElementById('expenseAmount').value = '';
+        document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
+    }
+}
+
+function deleteTransaction(type, id) {
+    showDeleteConfirm('транзакцию', () => {
+        const index = transactions.findIndex(t => t.id === id);
+        if (index !== -1) {
+            transactions.splice(index, 1);
+            updateAll();
+            saveData();
+        }
+    });
 }
 
 function showDeleteConfirm(itemType, action, id) {
@@ -1020,29 +1286,144 @@ function updateTransactions() {
         }
     });
     
-    // Create category items for income
+    // Create DІЯ style cards for income
     Object.entries(incomeCategories).forEach(([category, data]) => {
-        const categoryItem = createCategoryItem(category, data.amount, data.transactions, 'income');
-        incomeList.appendChild(categoryItem);
+        const card = createDiaCard(category, data.amount, data.transactions[0], 'income', data.transactions.length);
+        incomeList.appendChild(card);
     });
     
-    // Create category items for expenses
+    // Create DІЯ style cards for expenses
     Object.entries(expenseCategories).forEach(([category, data]) => {
-        const categoryItem = createCategoryItem(category, data.amount, data.transactions, 'expense');
-        expenseList.appendChild(categoryItem);
+        const card = createDiaCard(category, data.amount, data.transactions[0], 'expense', data.transactions.length);
+        expenseList.appendChild(card);
     });
     
     // Update totals
     totalIncomeElement.textContent = formatCurrency(totalIncome);
     totalExpenseElement.textContent = formatCurrency(totalExpense);
     
-    // Show empty messages if needed
+    // Show empty states if needed
     if (incomeList.children.length === 0) {
-        incomeList.innerHTML = `<p class="empty-message">${t.noIncome}</p>`;
+        incomeList.innerHTML = `
+            <div class="dia-empty-state">
+                <div class="dia-empty-icon">💰</div>
+                <div class="dia-empty-text">${t.noIncome}</div>
+                <div class="dia-empty-subtext">Добавьте свой первый доход</div>
+            </div>
+        `;
     }
     if (expenseList.children.length === 0) {
-        expenseList.innerHTML = `<p class="empty-message">${t.noExpense}</p>`;
+        expenseList.innerHTML = `
+            <div class="dia-empty-state">
+                <div class="dia-empty-icon">💸</div>
+                <div class="dia-empty-text">${t.noExpense}</div>
+                <div class="dia-empty-subtext">Добавьте свой первый расход</div>
+            </div>
+        `;
     }
+}
+
+function createDiaCard(title, amount, transaction, type, count = 1) {
+    const card = document.createElement('div');
+    card.className = `dia-card ${type}`;
+    
+    // Get icon based on type and category
+    const icon = getCardIcon(type, transaction?.category || title);
+    
+    // Format date
+    const date = transaction?.date ? new Date(transaction.date).toLocaleDateString('ru-RU', { 
+        day: 'numeric', 
+        month: 'short' 
+    }) : '';
+    
+    card.innerHTML = `
+        <div class="dia-card-header">
+            <div class="dia-card-icon">${icon}</div>
+            <div class="dia-card-amount ${type}">${formatCurrency(amount)}</div>
+        </div>
+        <h3 class="dia-card-title">${title}</h3>
+        <div class="dia-card-details">
+            <div class="dia-card-date">
+                📅 ${date}
+                ${count > 1 ? `• ${count} операций` : ''}
+            </div>
+            <div class="dia-card-type">${getCategoryLabel(transaction?.category || title, type)}</div>
+        </div>
+        <div class="dia-card-actions">
+            <button class="dia-card-btn edit" onclick="editTransaction('${type}', ${transaction?.id})">✏️</button>
+            <button class="dia-card-btn delete" onclick="deleteTransaction('${type}', ${transaction?.id})">🗑️</button>
+        </div>
+    `;
+    
+    return card;
+}
+
+function getCardIcon(type, category) {
+    const icons = {
+        income: {
+            salary: '💼',
+            bonus: '🎁',
+            freelance: '💻',
+            investment: '📈',
+            gift: '🎁',
+            other: '💰'
+        },
+        expense: {
+            food: '🍔',
+            transport: '🚗',
+            utilities: '💡',
+            entertainment: '🎮',
+            health: '🏥',
+            shopping: '🛍️',
+            other: '💸'
+        },
+        asset: {
+            'Наличность': '💵',
+            'Банковский счёт': '🏦',
+            'Сбережения': '🏆',
+            'Инвестиции': '📊',
+            'Депозит': '📋',
+            'Криптовалюта': '₿',
+            'Недвижимость': '🏠',
+            'Автомобиль': '🚗'
+        },
+        liability: {
+            'Ипотека': '🏠',
+            'Кредит на машину': '🚗',
+            'Потребительский кредит': '💳',
+            'Кредитная карта': '💳',
+            'Налоги': '📄',
+            'Коммунальные платежи': '💡',
+            'Долг другу': '🤝',
+            'Образовательный кредит': '📚'
+        }
+    };
+    
+    return icons[type]?.[category] || (type === 'income' ? '💰' : type === 'expense' ? '💸' : type === 'asset' ? '💳' : '📊');
+}
+
+function getCategoryLabel(category, type) {
+    const labels = {
+        income: {
+            salary: 'Зарплата',
+            bonus: 'Бонус',
+            freelance: 'Фриланс',
+            investment: 'Инвестиции',
+            gift: 'Подарок',
+            other: 'Другое'
+        },
+        expense: {
+            food: 'Продукты',
+            transport: 'Транспорт',
+            utilities: 'Коммунальные',
+            entertainment: 'Развлечения',
+            health: 'Здоровье',
+            shopping: 'Покупки',
+            other: 'Другое'
+        }
+    };
+    
+    return labels[type]?.[category] || category;
 }
 
 function createCategoryItem(category, amount, transactions, type) {
@@ -1159,23 +1540,49 @@ function updateAssets() {
     assetsList.innerHTML = '';
     let total = 0;
 
-    assets.forEach(asset => {
-        total += asset.amount;
-        
-        const item = document.createElement('div');
-        item.className = 'asset-item';
-        item.innerHTML = `
-            <span class="asset-item-name">${asset.name}</span>
-            <span class="asset-item-amount">${formatCurrency(asset.amount)}</span>
-            <div class="asset-item-actions">
-                <button class="btn-withdraw" onclick="withdrawFromAsset(${asset.id})">Снять</button>
-                <button class="btn-delete" onclick="deleteAsset(${asset.id})">Удалить</button>
+    if (assets.length === 0) {
+        assetsList.innerHTML = `
+            <div class="dia-empty-state">
+                <div class="dia-empty-icon">💳</div>
+                <div class="dia-empty-text">Нет активов</div>
+                <div class="dia-empty-subtext">Добавьте свой первый актив</div>
             </div>
         `;
-        assetsList.appendChild(item);
-    });
+    } else {
+        assets.forEach(asset => {
+            total += asset.amount;
+            
+            const card = createAssetCard(asset);
+            assetsList.appendChild(card);
+        });
+    }
 
     totalElement.textContent = formatCurrency(total);
+}
+
+function createAssetCard(asset) {
+    const card = document.createElement('div');
+    card.className = 'dia-card asset';
+    
+    const icon = getCardIcon('asset', asset.name);
+    const rate = asset.rate ? `${asset.rate}% годовых` : 'Без ставки';
+    
+    card.innerHTML = `
+        <div class="dia-card-header">
+            <div class="dia-card-icon">${icon}</div>
+            <div class="dia-card-amount asset">${formatCurrency(asset.amount)}</div>
+        </div>
+        <h3 class="dia-card-title">${asset.name}</h3>
+        <div class="dia-card-details">
+            <div class="dia-card-type">${rate}</div>
+        </div>
+        <div class="dia-card-actions">
+            <button class="dia-card-btn withdraw" onclick="withdrawFromAsset(${asset.id})">💸 Снять</button>
+            <button class="dia-card-btn delete" onclick="deleteAsset(${asset.id})">🗑️</button>
+        </div>
+    `;
+    
+    return card;
 }
 
 function updateLiabilities() {
@@ -1187,24 +1594,58 @@ function updateLiabilities() {
     liabilitiesList.innerHTML = '';
     let total = 0;
 
-    liabilities.forEach(liability => {
-        const remaining = liability.amount - liability.paid;
-        total += remaining;
-        
-        const item = document.createElement('div');
-        item.className = 'liability-item';
-        item.innerHTML = `
-            <span class="liability-item-name">${liability.name}</span>
-            <span class="liability-item-amount">${formatCurrency(remaining)}</span>
-            <div class="liability-item-actions">
-                <button class="btn-pay" onclick="payLiability(${liability.id})">Погасить</button>
-                <button class="btn-delete" onclick="deleteLiability(${liability.id})">Удалить</button>
+    if (liabilities.length === 0) {
+        liabilitiesList.innerHTML = `
+            <div class="dia-empty-state">
+                <div class="dia-empty-icon">📊</div>
+                <div class="dia-empty-text">Нет пассивов</div>
+                <div class="dia-empty-subtext">Добавьте свой первый пассив</div>
             </div>
         `;
-        liabilitiesList.appendChild(item);
-    });
+    } else {
+        liabilities.forEach(liability => {
+            const remaining = liability.amount - liability.paid;
+            total += remaining;
+            
+            const card = createLiabilityCard(liability);
+            liabilitiesList.appendChild(card);
+        });
+    }
 
     totalElement.textContent = formatCurrency(total);
+}
+
+function createLiabilityCard(liability) {
+    const card = document.createElement('div');
+    card.className = 'dia-card liability';
+    
+    const icon = getCardIcon('liability', liability.name);
+    const remaining = liability.amount - liability.paid;
+    const rate = liability.rate ? `${liability.rate}% годовых` : 'Без ставки';
+    const progressPercent = (liability.paid / liability.amount) * 100;
+    
+    card.innerHTML = `
+        <div class="dia-card-header">
+            <div class="dia-card-icon">${icon}</div>
+            <div class="dia-card-amount liability">${formatCurrency(remaining)}</div>
+        </div>
+        <h3 class="dia-card-title">${liability.name}</h3>
+        <div class="dia-card-details">
+            <div class="dia-card-type">${rate}</div>
+            <div class="dia-card-date">
+                Погашено: ${formatCurrency(liability.paid)} из ${formatCurrency(liability.amount)}
+            </div>
+            <div style="background: var(--gray-light); border-radius: 4px; height: 4px; margin-top: 4px;">
+                <div style="background: #f59e0b; height: 100%; border-radius: 4px; width: ${progressPercent}%; transition: width 0.3s ease;"></div>
+            </div>
+        </div>
+        <div class="dia-card-actions">
+            <button class="dia-card-btn pay" onclick="payLiability(${liability.id})">💰 Погасить</button>
+            <button class="dia-card-btn delete" onclick="deleteLiability(${liability.id})">🗑️</button>
+        </div>
+    `;
+    
+    return card;
 }
 
 
@@ -1641,10 +2082,8 @@ function filterCustomSuggestions(dropdownId, filter) {
 
 // --- MONTH NAVIGATION ---
 function updateMonthDisplay() {
-    const monthInput = document.getElementById('monthInput');
-    if (monthInput) {
-        monthInput.value = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
-    }
+    // Month display is now handled by the calendar dropdown
+    // This function can be used for other month-related updates if needed
 }
 
 function changeMonth(direction) {

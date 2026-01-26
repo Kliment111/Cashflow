@@ -10,28 +10,6 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Splash Screen -->
-    <div id="splashScreen" class="splash-screen">
-        <div class="splash-content">
-            <h1 class="splash-title">💰 Cashflow</h1>
-            <div class="splash-form">
-                <label for="splashLanguage" class="splash-label">Выберите язык:</label>
-                <select id="splashLanguage" class="splash-select">
-                    <option value="ru">Русский</option>
-                    <option value="uk">Українська</option>
-                    <option value="en">English</option>
-                </select>
-                <label for="splashCurrency" class="splash-label">Выберите валюту:</label>
-                <select id="splashCurrency" class="splash-select">
-                    <option value="$">Доллар ($)</option>
-                    <option value="₴">Гривна (₴)</option>
-                    <option value="€">Евро (€)</option>
-                </select>
-                <button class="btn btn-success splash-btn" id="splashContinueBtn">Продолжить</button>
-            </div>
-        </div>
-    </div>
-
     <div class="container">
         <div class="main-toolbar">
             <!-- Убрали дублирование - теперь только в header -->
@@ -42,72 +20,105 @@
                     <h1 id="appTitle">💰 Финансовый Трекер</h1>
                 </div>
                 <div class="header-right">
-                    <button class="btn btn-secondary settings-btn" id="settingsBtn">⚙️ Настройки</button>
-                </div>
-            </div>
-            <div class="header-controls">
-                <div class="month-selector">
-                    <button id="prevMonthBtn" class="month-nav-btn">←</button>
-                    <input type="month" id="monthInput" class="month-input">
-                    <button id="nextMonthBtn" class="month-nav-btn">→</button>
+                    <button class="icon-btn calendar-btn" id="calendarBtn" title="Календарь">📅</button>
+                    <button class="icon-btn settings-btn" id="settingsBtn" title="Настройки">⚙️</button>
                 </div>
             </div>
         </div>
 
         <div class="main-grid">
-            <!-- СВАЙП НАВИГАЦИЯ: Доходы/Расходы и Активы/Пассивы -->
-            <div class="swipe-container">
-                <div class="swipe-tabs">
-                    <button class="swipe-tab active" onclick="switchToTransactions()" data-i18n="incomeExpenseTab">💰 Доходы/Расходы</button>
-                    <button class="swipe-tab" onclick="switchToAssetsLiabilities()" data-i18n="assetsLiabilitiesTab">💳 Активы/Пассивы</button>
+            <!-- НАВИГАЦИЯ ПО ПРИНЦИПУ ДІЯ -->
+            <div class="dia-container">
+                <div class="dia-tabs">
+                    <button class="dia-tab active" onclick="switchToTab('income')" data-tab="income">
+                        <div class="tab-icon">💰</div>
+                        <div class="tab-label" data-i18n="incomeTab">Доходы</div>
+                    </button>
+                    <button class="dia-tab" onclick="switchToTab('expense')" data-tab="expense">
+                        <div class="tab-icon">💸</div>
+                        <div class="tab-label" data-i18n="expenseTab">Расходы</div>
+                    </button>
+                    <button class="dia-tab" onclick="switchToTab('assets')" data-tab="assets">
+                        <div class="tab-icon">💳</div>
+                        <div class="tab-label" data-i18n="assetsTab">Активы</div>
+                    </button>
+                    <button class="dia-tab" onclick="switchToTab('liabilities')" data-tab="liabilities">
+                        <div class="tab-icon">📊</div>
+                        <div class="tab-label" data-i18n="liabilitiesTab">Пассивы</div>
+                    </button>
                 </div>
-                <div class="swipe-content" id="swipeContent">
-                    <div class="swipe-panel transactions">
-                        <!-- ДОХОДЫ -->
-                        <div class="panel-section income-panel">
-                            <div class="section-header">
-                                <h3 data-i18n="income">💰 Доходы</h3>
-                                <div class="total-amount" id="totalIncomeAmount">0 $</div>
-                            </div>
-                            <div class="transactions-list" id="incomeList">
-                                <p class="empty-message" data-i18n="noIncome">Нет доходов</p>
-                            </div>
-                            <button class="btn btn-income" onclick="openIncomeModal()" data-i18n="addIncome">➕ Добавить Доход</button>
+                <div class="dia-content" id="diaContent">
+                    <!-- ДОХОДЫ -->
+                    <div class="dia-panel active" data-panel="income">
+                        <div class="panel-header">
+                            <h2 data-i18n="income">💰 Доходы</h2>
+                            <div class="total-amount" id="totalIncomeAmount">0 $</div>
                         </div>
-                        
-                        <!-- РАСХОДЫ -->
-                        <div class="panel-section expense-panel">
-                            <div class="section-header">
-                                <h3 data-i18n="expense">💸 Расходы</h3>
-                                <div class="total-amount" id="totalExpenseAmount">0 $</div>
+                        <div class="dia-cards-container" id="incomeList">
+                            <div class="dia-empty-state">
+                                <div class="dia-empty-icon">💰</div>
+                                <div class="dia-empty-text" data-i18n="noIncome">Нет доходов</div>
+                                <div class="dia-empty-subtext">Добавьте свой первый доход</div>
                             </div>
-                            <div class="transactions-list" id="expenseList">
-                                <p class="empty-message" data-i18n="noExpense">Нет расходов</p>
-                            </div>
-                            <button class="btn btn-expense" onclick="openExpenseModal()" data-i18n="addExpense">➕ Добавить Расход</button>
                         </div>
+                        <button class="btn btn-income" onclick="openIncomeModal()" data-i18n="addIncome">➕ Добавить доход</button>
                     </div>
-                    <div class="swipe-panel assets-liabilities">
-                        <!-- АКТИВЫ -->
-                        <div class="panel-section assets-panel">
-                            <div class="section-header">
-                                <h3 data-i18n="assetsTitle">💳 Активы</h3>
-                                <div class="total-amount" id="totalAssetsAmount">0 $</div>
-                            </div>
-                            <div class="assets-list" id="assetsList"></div>
-                            <button class="btn btn-success" id="addAssetBtn" onclick="openAssetModal()" data-i18n="addAsset">➕ Добавить Актив</button>
+                    
+                    <!-- РАСХОДЫ -->
+                    <div class="dia-panel" data-panel="expense">
+                        <div class="panel-header">
+                            <h2 data-i18n="expense">💸 Расходы</h2>
+                            <div class="total-amount" id="totalExpenseAmount">0 $</div>
                         </div>
-                        
-                        <!-- ПАССИВЫ -->
-                        <div class="panel-section liabilities-panel">
-                            <div class="section-header">
-                                <h3 data-i18n="liabilitiesTitle">📊 Пассивы</h3>
-                                <div class="total-amount" id="totalLiabilitiesAmount">0 $</div>
+                        <div class="dia-cards-container" id="expenseList">
+                            <div class="dia-empty-state">
+                                <div class="dia-empty-icon">💸</div>
+                                <div class="dia-empty-text" data-i18n="noExpense">Нет расходов</div>
+                                <div class="dia-empty-subtext">Добавьте свой первый расход</div>
                             </div>
-                            <div class="liabilities-list" id="liabilitiesList"></div>
-                            <button class="btn btn-danger" id="addLiabilityBtn" onclick="openLiabilityModal()" data-i18n="addLiability">➕ Добавить Пассив</button>
                         </div>
+                        <button class="btn btn-expense" onclick="openExpenseModal()" data-i18n="addExpense">➕ Добавить расход</button>
                     </div>
+                    
+                    <!-- АКТИВЫ -->
+                    <div class="dia-panel" data-panel="assets">
+                        <div class="panel-header">
+                            <h2 data-i18n="assetsTitle">💳 Активы</h2>
+                            <div class="total-amount" id="totalAssetsAmount">0 $</div>
+                        </div>
+                        <div class="dia-cards-container" id="assetsList">
+                            <div class="dia-empty-state">
+                                <div class="dia-empty-icon">💳</div>
+                                <div class="dia-empty-text">Нет активов</div>
+                                <div class="dia-empty-subtext">Добавьте свой первый актив</div>
+                            </div>
+                        </div>
+                        <button class="btn btn-success" id="addAssetBtn" onclick="openAssetModal()" data-i18n="addAsset">➕ Добавить актив</button>
+                    </div>
+                    
+                    <!-- ПАССИВЫ -->
+                    <div class="dia-panel" data-panel="liabilities">
+                        <div class="panel-header">
+                            <h2 data-i18n="liabilitiesTitle">📊 Пассивы</h2>
+                            <div class="total-amount" id="totalLiabilitiesAmount">0 $</div>
+                        </div>
+                        <div class="dia-cards-container" id="liabilitiesList">
+                            <div class="dia-empty-state">
+                                <div class="dia-empty-icon">📊</div>
+                                <div class="dia-empty-text">Нет пассивов</div>
+                                <div class="dia-empty-subtext">Добавьте свой первый пассив</div>
+                            </div>
+                        </div>
+                        <button class="btn btn-danger" id="addLiabilityBtn" onclick="openLiabilityModal()" data-i18n="addLiability">➕ Добавить пассив</button>
+                    </div>
+                </div>
+                
+                <!-- Индикаторы страниц -->
+                <div class="dia-indicators">
+                    <div class="indicator active" data-indicator="income"></div>
+                    <div class="indicator" data-indicator="expense"></div>
+                    <div class="indicator" data-indicator="assets"></div>
+                    <div class="indicator" data-indicator="liabilities"></div>
                 </div>
             </div>
             
@@ -469,5 +480,17 @@
 
     <script src="main.js"></script>
     <script src="google-auth.js"></script>
+    
+    <!-- Календарь (поверх всего контента) -->
+    <div class="calendar-dropdown" id="calendarDropdown">
+        <div class="calendar-header">
+            <button class="calendar-nav-btn" id="calendarPrevBtn">‹</button>
+            <div class="calendar-title" id="calendarTitle">Январь 2024</div>
+            <button class="calendar-nav-btn" id="calendarNextBtn">›</button>
+        </div>
+        <div class="calendar-grid" id="calendarGrid">
+            <!-- Календарь генерируется через JS -->
+        </div>
+    </div>
 </body>
 </html>
