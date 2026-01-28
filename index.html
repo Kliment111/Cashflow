@@ -4,12 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Финансовый трекер</title>
+    
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#16a34a">
     <link rel="apple-touch-icon" href="icon.svg">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Кнопки в углах сайта -->
+    <button class="corner-btn calendar-corner-btn" id="calendarBtn" title="Календарь">📅</button>
+    <button class="corner-btn settings-corner-btn" id="settingsBtn" title="Настройки">⚙️</button>
+    
     <div class="container">
         <div class="main-toolbar">
             <!-- Убрали дублирование - теперь только в header -->
@@ -18,10 +23,6 @@
             <div class="header-top">
                 <div class="header-left">
                     <h1 id="appTitle">💰 Финансовый Трекер</h1>
-                </div>
-                <div class="header-right">
-                    <button class="icon-btn calendar-btn" id="calendarBtn" title="Календарь">📅</button>
-                    <button class="icon-btn settings-btn" id="settingsBtn" title="Настройки">⚙️</button>
                 </div>
             </div>
         </div>
