@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Финансовый трекер</title>
+    <title>💰 Финансовый трекер</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#16a34a">
@@ -22,7 +22,7 @@
         <div class="header">
             <div class="header-top">
                 <div class="header-left">
-                    <h1 id="appTitle">💰 Финансовый Трекер</h1>
+                    <h1 id="appTitle" style="text-align: center; width: 100%;">💰 Финансовый трекер</h1>
                 </div>
             </div>
         </div>
@@ -195,14 +195,16 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label for="expenseType">Категория расхода</label>
-                    <select id="expenseType" class="input-field">
-                        <option value="other" selected>Другое</option>
+                    <select id="expenseType" class="select-field">
                         <option value="food">Продукты</option>
                         <option value="transport">Транспорт</option>
                         <option value="utilities">Коммунальные услуги</option>
                         <option value="entertainment">Развлечения</option>
                         <option value="health">Здоровье</option>
                         <option value="shopping">Покупки</option>
+                        <option value="withdrawal">💸 Снятие с активов</option>
+                        <option value="liability_payment">🏠 Погашение пассивов</option>
+                        <option value="other">Другое</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -458,8 +460,8 @@
 
     <!-- КРАТКОЕ ИЗЛОЖЕНИЕ - Compact bottom bar -->
     <div class="summary-bar">
-        <div class="summary-bar-container">
-            <div class="summary-info">
+        <div class="summary-bar-container" style="justify-content: center; text-align: center;">
+            <div class="summary-info" style="justify-content: center;">
                 <div class="summary-item compact">
                     <span class="summary-label" data-i18n="income">Доходы</span>
                     <span class="summary-amount income-amount" id="totalIncome">0 $</span>
@@ -473,9 +475,6 @@
                     <span class="summary-amount balance-amount" id="totalBalance">0 $</span>
                 </div>
             </div>
-            <button class="btn btn-compact" id="monthEndBtn" data-i18n="monthEnd">
-                📅 Закончить месяц
-            </button>
         </div>
     </div>
 

@@ -153,13 +153,6 @@ function initializeApp() {
 
 // Initialize DІЯ navigation
 function initializeDiaNavigation() {
-    const diaContainer = document.querySelector('.dia-container');
-    if (diaContainer) {
-        diaContainer.addEventListener('touchstart', handleTouchStart, { passive: true });
-        diaContainer.addEventListener('touchmove', handleTouchMove, { passive: true });
-        diaContainer.addEventListener('touchend', handleTouchEnd, { passive: true });
-    }
-    
     // Initialize indicators click events
     const indicators = document.querySelectorAll('.indicator');
     indicators.forEach(indicator => {
@@ -339,12 +332,6 @@ function setupEventListeners() {
     // Initialize custom suggestions
     initializeCustomSuggestions();
 
-    // Set up month end button
-    const monthEndBtn = document.getElementById('monthEndBtn');
-    if (monthEndBtn) {
-        monthEndBtn.addEventListener('click', endMonth);
-    }
-    
     // Initialize calendar
     initializeCalendar();
 }
@@ -420,18 +407,16 @@ function showIosInstallInstructions() {
 
 // --- SPLASH SCREEN LOGIC ---
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize swipe navigation
-    const swipeContainer = document.querySelector('.swipe-container');
-    const swipeContent = document.getElementById('swipeContent');
+    // Initialize swipe navigation for DIA container
+    const diaContainer = document.querySelector('.dia-container');
     
-    if (swipeContainer && swipeContent) {
-        swipeContainer.addEventListener('touchstart', handleTouchStart, { passive: true });
-        swipeContainer.addEventListener('touchmove', handleTouchMove, { passive: true });
-        swipeContainer.addEventListener('touchend', handleTouchEnd, { passive: true });
+    if (diaContainer) {
+        diaContainer.addEventListener('touchstart', handleTouchStart, { passive: true });
+        diaContainer.addEventListener('touchmove', handleTouchMove, { passive: true });
+        diaContainer.addEventListener('touchend', handleTouchEnd, { passive: true });
         
-        // Initialize panel position
-        updateSwipePanel();
-        updateSwipeTabs();
+        // Initialize DIA navigation
+        initializeDiaNavigation();
     }
 
     // Header language selector
@@ -738,41 +723,24 @@ function showValidationError(message) {
         position: fixed;
         top: 20px;
         right: 20px;
-        background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+        background: #ef4444;
         color: white;
-        padding: 16px 24px;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
+        padding: 12px 20px;
+        border-radius: 8px;
+        border: 2px solid #dc2626;
+        box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
         z-index: 10000;
-        font-weight: 500;
+        font-weight: 600;
         font-size: 14px;
-        max-width: 300px;
-        animation: slideInRight 0.3s ease-out;
+        animation: slideIn 0.3s ease;
     `;
     toast.textContent = message;
-    
-    // Add animation keyframes if not already present
-    if (!document.getElementById('toast-animations')) {
-        const style = document.createElement('style');
-        style.id = 'toast-animations';
-        style.textContent = `
-            @keyframes slideInRight {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-            @keyframes slideOutRight {
-                from { transform: translateX(0); opacity: 1; }
-                to { transform: translateX(100%); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
-    }
     
     document.body.appendChild(toast);
     
     // Auto remove after 3 seconds
     setTimeout(() => {
-        toast.style.animation = 'slideOutRight 0.3s ease-out';
+        toast.style.animation = 'slideOut 0.3s ease';
         setTimeout(() => {
             if (toast.parentNode) {
                 toast.parentNode.removeChild(toast);
@@ -780,6 +748,66 @@ function showValidationError(message) {
         }, 300);
     }, 3000);
 }
+
+function showSuccessMessage(message) {
+    // Create a success toast notification
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #22c55e;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        border: 2px solid #16a34a;
+        box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
+        z-index: 10000;
+        font-weight: 600;
+        font-size: 14px;
+        animation: slideIn 0.3s ease;
+    `;
+    toast.textContent = message;
+    
+    document.body.appendChild(toast);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Add animations for toast notifications
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
 
 function showTopUpConfirm(existingAsset, amount, rate) {
     // Create modal dynamically
@@ -820,6 +848,20 @@ function showTopUpConfirm(existingAsset, amount, rate) {
         const asset = assets.find(a => a.id === assetId);
         if (asset) {
             asset.amount += topUpAmount;
+            
+            // Create income transaction for top-up
+            const topUpTransaction = {
+                id: Date.now(),
+                type: 'income',
+                category: 'other',
+                description: `Пополнение актива "${asset.name}"`,
+                amount: topUpAmount,
+                date: new Date().toISOString().split('T')[0]
+            };
+            
+            transactions.push(topUpTransaction);
+            showSuccessMessage(`Актив "${asset.name}" пополнен на ${formatCurrency(topUpAmount)} и добавлен в доходы`);
+            
             saveData();
             updateAll();
             closeAssetModal();
@@ -855,6 +897,22 @@ function addAssetTransaction() {
         return;
     }
 
+    // Check if we're editing an existing asset
+    if (window.editingAssetId) {
+        const asset = assets.find(a => a.id === window.editingAssetId);
+        if (asset) {
+            asset.name = name;
+            asset.amount = amount;
+            asset.rate = rate;
+            
+            closeAssetModal();
+            resetModal('asset');
+            updateAll();
+            saveData();
+            return;
+        }
+    }
+
     // Check for existing asset with same name
     const existingAsset = assets.find(asset => asset.name.toLowerCase() === name.toLowerCase());
     
@@ -874,7 +932,21 @@ function addAssetTransaction() {
             date: new Date().toISOString().split('T')[0]
         };
 
+        // Create income transaction for new asset
+        const assetTransaction = {
+            id: Date.now() + 1,
+            type: 'income',
+            category: 'other',
+            description: `Создание актива "${name}"`,
+            amount: amount,
+            date: new Date().toISOString().split('T')[0]
+        };
+
         assets.push(asset);
+        transactions.push(assetTransaction);
+        
+        showSuccessMessage(`Актив "${name}" создан на ${formatCurrency(amount)} и добавлен в доходы`);
+        
         saveData();
         updateAll();
         closeAssetModal();
@@ -890,6 +962,22 @@ function addLiabilityTransaction() {
     if (!name || !amount || amount <= 0) {
         showValidationError('Пожалуйста, заполните все поля корректно');
         return;
+    }
+
+    // Check if we're editing an existing liability
+    if (window.editingLiabilityId) {
+        const liability = liabilities.find(l => l.id === window.editingLiabilityId);
+        if (liability) {
+            liability.name = name;
+            liability.amount = amount;
+            liability.rate = rate;
+            
+            closeLiabilityModal();
+            resetModal('liability');
+            updateAll();
+            saveData();
+            return;
+        }
     }
 
     // Check for duplicate liability names
@@ -911,7 +999,21 @@ function addLiabilityTransaction() {
         date: new Date().toISOString().split('T')[0]
     };
 
+    // Create expense transaction for new liability (this represents the obligation)
+    const liabilityTransaction = {
+        id: Date.now() + 1,
+        type: 'expense',
+        category: 'liability_payment',
+        description: `Создание пассива "${name}"`,
+        amount: amount,
+        date: new Date().toISOString().split('T')[0]
+    };
+
     liabilities.push(liability);
+    transactions.push(liabilityTransaction);
+    
+    showSuccessMessage(`Пассив "${name}" создан на ${formatCurrency(amount)} и добавлен в расходы`);
+    
     saveData();
     updateAll();
     closeLiabilityModal();
@@ -926,6 +1028,23 @@ function addIncomeTransaction() {
     if (!amount || amount <= 0) {
         alert('Пожалуйста, введите корректную сумму');
         return;
+    }
+
+    // Check if we're editing an existing transaction
+    if (window.editingTransactionId) {
+        const transaction = transactions.find(t => t.id === window.editingTransactionId);
+        if (transaction) {
+            transaction.category = type;
+            transaction.description = description || type;
+            transaction.amount = amount;
+            transaction.date = date || new Date().toISOString().split('T')[0];
+            
+            closeIncomeModal();
+            resetModal('income');
+            updateAll();
+            saveData();
+            return;
+        }
     }
 
     const transaction = {
@@ -954,6 +1073,23 @@ function addExpenseTransaction() {
         return;
     }
 
+    // Check if we're editing an existing transaction
+    if (window.editingTransactionId) {
+        const transaction = transactions.find(t => t.id === window.editingTransactionId);
+        if (transaction) {
+            transaction.category = type;
+            transaction.description = description || type;
+            transaction.amount = amount;
+            transaction.date = date || new Date().toISOString().split('T')[0];
+            
+            closeExpenseModal();
+            resetModal('expense');
+            updateAll();
+            saveData();
+            return;
+        }
+    }
+
     const transaction = {
         id: Date.now(),
         type: 'expense',
@@ -978,47 +1114,91 @@ function deleteLiability(id) {
 }
 
 function editTransaction(type, id) {
-    const transaction = transactions.find(t => t.id === id);
-    if (!transaction) return;
-    
-    if (type === 'income') {
-        // Fill income modal with transaction data
-        document.getElementById('incomeType').value = transaction.category || 'other';
-        document.getElementById('incomeDescription').value = transaction.description;
-        document.getElementById('incomeAmount').value = transaction.amount;
-        document.getElementById('incomeDate').value = transaction.date;
+    if (type === 'income' || type === 'expense') {
+        const transaction = transactions.find(t => t.id === id);
+        if (!transaction) return;
+        
+        if (type === 'income') {
+            // Fill income modal with transaction data
+            document.getElementById('incomeType').value = transaction.category || 'other';
+            document.getElementById('incomeDescription').value = transaction.description;
+            document.getElementById('incomeAmount').value = transaction.amount;
+            document.getElementById('incomeDate').value = transaction.date;
+            
+            // Store editing ID
+            window.editingTransactionId = id;
+            
+            // Change modal title and button
+            const modal = document.getElementById('incomeModal');
+            modal.querySelector('h2').textContent = '💰 Редактировать доход';
+            modal.querySelector('.btn-income').textContent = 'Сохранить изменения';
+            modal.querySelector('.btn-income').onclick = function() {
+                updateTransaction(id, 'income');
+            };
+            
+            openIncomeModal();
+        } else if (type === 'expense') {
+            // Fill expense modal with transaction data
+            document.getElementById('expenseType').value = transaction.category || 'other';
+            document.getElementById('expenseDescription').value = transaction.description;
+            document.getElementById('expenseAmount').value = transaction.amount;
+            document.getElementById('expenseDate').value = transaction.date;
+            
+            // Store editing ID
+            window.editingTransactionId = id;
+            
+            // Change modal title and button
+            const modal = document.getElementById('expenseModal');
+            modal.querySelector('h2').textContent = '💸 Редактировать расход';
+            modal.querySelector('.btn-expense').textContent = 'Сохранить изменения';
+            modal.querySelector('.btn-expense').onclick = function() {
+                updateTransaction(id, 'expense');
+            };
+            
+            openExpenseModal();
+        }
+    } else if (type === 'asset') {
+        const asset = assets.find(a => a.id === id);
+        if (!asset) return;
+        
+        // Fill asset modal with asset data
+        document.getElementById('assetName').value = asset.name;
+        document.getElementById('assetAmount').value = asset.amount;
+        document.getElementById('assetRate').value = asset.rate || '';
         
         // Store editing ID
-        window.editingTransactionId = id;
+        window.editingAssetId = id;
         
         // Change modal title and button
-        const modal = document.getElementById('incomeModal');
-        modal.querySelector('h2').textContent = '💰 Редактировать доход';
-        modal.querySelector('.btn-income').textContent = 'Сохранить изменения';
-        modal.querySelector('.btn-income').onclick = function() {
-            updateTransaction(id, 'income');
+        const modal = document.getElementById('assetModal');
+        modal.querySelector('h2').textContent = '💳 Редактировать актив';
+        modal.querySelector('.btn-success').textContent = 'Сохранить изменения';
+        modal.querySelector('.btn-success').onclick = function() {
+            updateAsset(id);
         };
         
-        openIncomeModal();
-    } else if (type === 'expense') {
-        // Fill expense modal with transaction data
-        document.getElementById('expenseType').value = transaction.category || 'other';
-        document.getElementById('expenseDescription').value = transaction.description;
-        document.getElementById('expenseAmount').value = transaction.amount;
-        document.getElementById('expenseDate').value = transaction.date;
+        openAssetModal();
+    } else if (type === 'liability') {
+        const liability = liabilities.find(l => l.id === id);
+        if (!liability) return;
+        
+        // Fill liability modal with liability data
+        document.getElementById('liabilityName').value = liability.name;
+        document.getElementById('liabilityAmount').value = liability.amount;
+        document.getElementById('liabilityRate').value = liability.rate || '';
         
         // Store editing ID
-        window.editingTransactionId = id;
+        window.editingLiabilityId = id;
         
         // Change modal title and button
-        const modal = document.getElementById('expenseModal');
-        modal.querySelector('h2').textContent = '💸 Редактировать расход';
-        modal.querySelector('.btn-expense').textContent = 'Сохранить изменения';
-        modal.querySelector('.btn-expense').onclick = function() {
-            updateTransaction(id, 'expense');
+        const modal = document.getElementById('liabilityModal');
+        modal.querySelector('h2').textContent = '📊 Редактировать пассив';
+        modal.querySelector('.btn-danger').textContent = 'Сохранить изменения';
+        modal.querySelector('.btn-danger').onclick = function() {
+            updateLiability(id);
         };
         
-        openExpenseModal();
+        openLiabilityModal();
     }
 }
 
@@ -1050,10 +1230,37 @@ function updateTransaction(id, type) {
     saveData();
 }
 
-function resetModal(type) {
-    window.editingTransactionId = null;
+function updateAsset(id) {
+    const asset = assets.find(a => a.id === id);
+    if (!asset) return;
     
+    asset.name = document.getElementById('assetName').value;
+    asset.amount = parseFloat(document.getElementById('assetAmount').value);
+    asset.rate = parseFloat(document.getElementById('assetRate').value) || 0;
+    
+    closeAssetModal();
+    resetModal('asset');
+    updateAll();
+    saveData();
+}
+
+function updateLiability(id) {
+    const liability = liabilities.find(l => l.id === id);
+    if (!liability) return;
+    
+    liability.name = document.getElementById('liabilityName').value;
+    liability.amount = parseFloat(document.getElementById('liabilityAmount').value);
+    liability.rate = parseFloat(document.getElementById('liabilityRate').value) || 0;
+    
+    closeLiabilityModal();
+    resetModal('liability');
+    updateAll();
+    saveData();
+}
+
+function resetModal(type) {
     if (type === 'income') {
+        window.editingTransactionId = null;
         const modal = document.getElementById('incomeModal');
         modal.querySelector('h2').textContent = '💰 Добавить доход';
         modal.querySelector('.btn-income').textContent = 'Добавить';
@@ -1063,6 +1270,7 @@ function resetModal(type) {
         document.getElementById('incomeAmount').value = '';
         document.getElementById('incomeDate').value = new Date().toISOString().split('T')[0];
     } else if (type === 'expense') {
+        window.editingTransactionId = null;
         const modal = document.getElementById('expenseModal');
         modal.querySelector('h2').textContent = '💸 Добавить расход';
         modal.querySelector('.btn-expense').textContent = 'Добавить';
@@ -1071,18 +1279,35 @@ function resetModal(type) {
         document.getElementById('expenseDescription').value = '';
         document.getElementById('expenseAmount').value = '';
         document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
+    } else if (type === 'asset') {
+        window.editingAssetId = null;
+        const modal = document.getElementById('assetModal');
+        modal.querySelector('h2').textContent = '💳 Добавить/Пополнить Актив';
+        modal.querySelector('.btn-success').textContent = 'Добавить';
+        modal.querySelector('.btn-success').onclick = addAssetTransaction;
+        document.getElementById('assetName').value = '';
+        document.getElementById('assetAmount').value = '';
+        document.getElementById('assetRate').value = '';
+    } else if (type === 'liability') {
+        window.editingLiabilityId = null;
+        const modal = document.getElementById('liabilityModal');
+        modal.querySelector('h2').textContent = '📊 Добавить Пассив';
+        modal.querySelector('.btn-danger').textContent = 'Добавить';
+        modal.querySelector('.btn-danger').onclick = addLiabilityTransaction;
+        document.getElementById('liabilityName').value = '';
+        document.getElementById('liabilityAmount').value = '';
+        document.getElementById('liabilityRate').value = '';
     }
 }
 
 function deleteTransaction(type, id) {
-    showDeleteConfirm('транзакцию', () => {
-        const index = transactions.findIndex(t => t.id === id);
-        if (index !== -1) {
-            transactions.splice(index, 1);
-            updateAll();
-            saveData();
-        }
-    });
+    if (type === 'asset') {
+        showDeleteConfirm('актив', 'deleteAsset', id);
+    } else if (type === 'liability') {
+        showDeleteConfirm('пассив', 'deleteLiability', id);
+    } else {
+        showDeleteConfirm('транзакцию', 'deleteTransaction', id);
+    }
 }
 
 function showDeleteConfirm(itemType, action, id) {
@@ -1091,27 +1316,47 @@ function showDeleteConfirm(itemType, action, id) {
     const messageElement = document.getElementById('deleteConfirmMessage');
     const confirmBtn = document.getElementById('confirmDeleteBtn');
     
+    if (!modal || !titleElement || !messageElement || !confirmBtn) {
+        console.error('Delete confirm modal elements not found');
+        showValidationError('Ошибка: модальное окно не найдено');
+        return;
+    }
+    
+    console.log('Delete confirm:', { itemType, action, id }); // Debug
+    
     // Update modal content
     titleElement.textContent = `⚠️ Удаление ${itemType}`;
     messageElement.textContent = `Вы уверены, что хотите удалить этот ${itemType}?`;
     
     // Set up confirm button action
     confirmBtn.onclick = function() {
+        console.log('Confirm delete:', { action, id }); // Debug
+        
         if (action === 'deleteAsset') {
+            console.log('Deleting asset:', id); // Debug
             assets = assets.filter(asset => asset.id !== id);
+            console.log('Assets after delete:', assets); // Debug
         } else if (action === 'deleteLiability') {
+            console.log('Deleting liability:', id); // Debug
             liabilities = liabilities.filter(liability => liability.id !== id);
+            console.log('Liabilities after delete:', liabilities); // Debug
         } else if (action === 'deleteTransaction') {
+            console.log('Deleting transaction:', id); // Debug
             transactions = transactions.filter(transaction => transaction.id !== id);
+            console.log('Transactions after delete:', transactions); // Debug
         }
         
         saveData();
         updateAll();
         closeDeleteConfirm();
+        
+        // Show success message
+        showSuccessMessage(`${itemType.charAt(0).toUpperCase() + itemType.slice(1)} успешно удален!`);
     };
     
     // Show modal
     modal.classList.add('active');
+    console.log('Modal shown'); // Debug
 }
 
 function withdrawFromAsset(id) {
@@ -1156,11 +1401,25 @@ function withdrawFromAsset(id) {
             const amount = parseFloat(amountInput.value);
             if (amount && amount > 0 && amount <= asset.amount) {
                 asset.amount -= amount;
+                
+                // Create expense transaction for withdrawal
+                const withdrawalTransaction = {
+                    id: Date.now(),
+                    type: 'expense',
+                    category: 'withdrawal',
+                    description: `Снятие с актива "${asset.name}"`,
+                    amount: amount,
+                    date: new Date().toISOString().split('T')[0]
+                };
+                
+                transactions.push(withdrawalTransaction);
+                showSuccessMessage(`Снято ${formatCurrency(amount)} с актива "${asset.name}" и добавлено в расходы`);
+                
                 saveData();
                 updateAll();
                 closeWithdrawAssetModal();
             } else {
-                alert('Пожалуйста, введите корректную сумму');
+                showValidationError('Пожалуйста, введите корректную сумму');
             }
         };
     }
@@ -1218,11 +1477,31 @@ function payLiability(id) {
             const amount = parseFloat(amountInput.value);
             if (amount && amount > 0 && amount <= remaining) {
                 liability.paid += amount;
+                
+                // Create expense transaction for liability payment
+                const paymentTransaction = {
+                    id: Date.now(),
+                    type: 'expense',
+                    category: 'liability_payment',
+                    description: `Погашение пассива "${liability.name}"`,
+                    amount: amount,
+                    date: new Date().toISOString().split('T')[0]
+                };
+                
+                transactions.push(paymentTransaction);
+                
+                // Check if liability is fully paid
+                if (liability.paid >= liability.amount) {
+                    showSuccessMessage('Пассив полностью погашен! 🎉 Транзакция добавлена в расходы');
+                } else {
+                    showSuccessMessage(`Погашено ${formatCurrency(amount)}. Осталось ${formatCurrency(liability.amount - liability.paid)}. Транзакция добавлена в расходы`);
+                }
+                
                 saveData();
                 updateAll();
                 closePayLiabilityModal();
             } else {
-                alert('Пожалуйста, введите корректную сумму');
+                showValidationError('Пожалуйста, введите корректную сумму');
             }
         };
     }
@@ -1230,21 +1509,27 @@ function payLiability(id) {
 
 // --- UPDATE FUNCTIONS ---
 function updateAll() {
+    console.log('Updating all displays...'); // Debug
     updateTransactions();
     updateAssets();
     updateLiabilities();
     updateSummary();
     saveData();
+    console.log('All displays updated'); // Debug
 }
 
 function updateTransactions() {
+    console.log('Updating transactions...'); // Debug
     const t = translations[currentLanguage];
     const incomeList = document.getElementById('incomeList');
     const expenseList = document.getElementById('expenseList');
     const totalIncomeElement = document.getElementById('totalIncomeAmount');
     const totalExpenseElement = document.getElementById('totalExpenseAmount');
     
-    if (!incomeList || !expenseList || !totalIncomeElement || !totalExpenseElement) return;
+    if (!incomeList || !expenseList || !totalIncomeElement || !totalExpenseElement) {
+        console.error('Transaction lists or total elements not found');
+        return;
+    }
 
     // Clear lists
     incomeList.innerHTML = '';
@@ -1255,6 +1540,7 @@ function updateTransactions() {
     
     // Get current month transactions
     const currentMonthTransactions = getCurrentMonthTransactions();
+    console.log('Current month transactions:', currentMonthTransactions.length); // Debug
     
     // Group transactions by category
     const incomeCategories = {};
@@ -1321,6 +1607,8 @@ function updateTransactions() {
             </div>
         `;
     }
+    
+    console.log('Transactions updated - Income cards:', incomeList.children.length, 'Expense cards:', expenseList.children.length); // Debug
 }
 
 function createDiaCard(title, amount, transaction, type, count = 1) {
@@ -1375,6 +1663,8 @@ function getCardIcon(type, category) {
             entertainment: '🎮',
             health: '🏥',
             shopping: '🛍️',
+            withdrawal: '💸',
+            liability_payment: '🏠',
             other: '💸'
         },
         asset: {
@@ -1419,6 +1709,8 @@ function getCategoryLabel(category, type) {
             entertainment: 'Развлечения',
             health: 'Здоровье',
             shopping: 'Покупки',
+            withdrawal: '💸 Снятие с активов',
+            liability_payment: '🏠 Погашение пассивов',
             other: 'Другое'
         }
     };
@@ -1532,10 +1824,14 @@ function showCategoryDetails(category, transactions, type) {
 }
 
 function updateAssets() {
+    console.log('Updating assets...'); // Debug
     const assetsList = document.getElementById('assetsList');
     const totalElement = document.getElementById('totalAssetsAmount');
     
-    if (!assetsList || !totalElement) return;
+    if (!assetsList || !totalElement) {
+        console.error('Assets list or total element not found');
+        return;
+    }
 
     assetsList.innerHTML = '';
     let total = 0;
@@ -1558,6 +1854,7 @@ function updateAssets() {
     }
 
     totalElement.textContent = formatCurrency(total);
+    console.log('Assets updated, count:', assets.length); // Debug
 }
 
 function createAssetCard(asset) {
@@ -1586,10 +1883,14 @@ function createAssetCard(asset) {
 }
 
 function updateLiabilities() {
+    console.log('Updating liabilities...'); // Debug
     const liabilitiesList = document.getElementById('liabilitiesList');
     const totalElement = document.getElementById('totalLiabilitiesAmount');
     
-    if (!liabilitiesList || !totalElement) return;
+    if (!liabilitiesList || !totalElement) {
+        console.error('Liabilities list or total element not found');
+        return;
+    }
 
     liabilitiesList.innerHTML = '';
     let total = 0;
@@ -1613,6 +1914,7 @@ function updateLiabilities() {
     }
 
     totalElement.textContent = formatCurrency(total);
+    console.log('Liabilities updated, count:', liabilities.length); // Debug
 }
 
 function createLiabilityCard(liability) {
@@ -2167,7 +2469,6 @@ const translations = {
         income: 'Доходы',
         expense: 'Расходы',
         balance: 'Баланс',
-        monthEnd: '📅 Закончить месяц',
         addIncome: '➕ Добавить Доход',
         addExpense: '➕ Добавить Расход',
         noIncome: 'Нет доходов',
